@@ -1,2 +1,10 @@
-# 21cm-wrapper
-An attempt to code a simple wrapper for p21cmfast.
+# p21cmfast wrapper v0.1
+
+Quickstart:
+1) Edit the parameter file to your likings
+2) Import the Parameters and Simulation class
+3) 
+
+Philosphy:
+The classes are written such that:
+If no arguments are passed, the standard parameter from the yaml file are used.
