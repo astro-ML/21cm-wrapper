@@ -1,0 +1,265 @@
+input_params:
+  lightcone_quantities:
+    - brightness_temp
+    - xH_box
+    - density
+  redshift: 12
+  max_redshift: 7
+
+astro_params:
+  ### primary variables to change ###
+  ## https://21cmfast.readthedocs.io/en/latest/reference/_autosummary/inputs/py21cmfast.inputs.AstroParams.html ##
+  # use default parameters for this section
+  use_default: true
+  # <-> # X-ray energy threshold for self-absorption by host galaxies (in eV). Also called E_0 (cf. Sec 4.1 of Greig+2018). Typical range is (100, 1500).
+  NU_X_THRESH: 500.0
+  # <-> # The ionizing efficiency of high-z galaxies (zeta, from Eq. 2 of Greig+2015). Higher values tend to speed up reionization.
+  HII_EFF_FACTOR: 30.0
+  # <-> # Minimum virial temperature of star-forming haloes (Sec 2.1.3 of Greig+2015). Given in log10 units.
+  ION_Tvir_MIN: 4.69897
+  # <-> # The specific X-ray luminosity per unit star formation escaping host galaxies. Cf. Eq. 6 of Greig+2018. Given in log10 units.
+  L_X: 40.0
+  # <-> # The specific X-ray luminosity per unit star formation escaping host galaxies for minihalos. Cf. Eq. 23 of Qin+2020. Given in log10 units.
+  L_X_MINI: 40.0
+
+  ### additional parameters ###
+  # Power-law index of escape fraction as a function of halo mass. See Sec 2.1 of Park+2018.
+  ALPHA_ESC: -0.5
+  # Power-law index of fraction of galactic gas in stars as a function of halo mass. See Sec 2.1 of Park+2018.
+  ALPHA_STAR: 0.5
+  # Power-law index of fraction of galactic gas in stars as a function of halo mass, for MCGs. See Sec 2 of Muñoz+21 (2110.13919)
+  ALPHA_STAR_MINI: 0.5
+  # Impact of the LW feedback on Mturn for minihaloes. Default is 22.8685 and 0.47 following Machacek+01, respectively. Latest simulations suggest 2.0 and 0.6. See Sec 2 of Muñoz+21 (2110.13919).
+  A_LW: 2.0
+  BETA_LW: 0.6
+  # Impact of the DM-baryon relative velocities on Mturn for minihaloes. Default is 1.0 and 1.8, and agrees between different sims. See Sec 2 of Muñoz+21 (2110.13919)
+  A_VCB: 1.0
+  BETA_VCB: 1.8
+  # The “escape fraction”, i.e. the fraction of ionizing photons escaping into the IGM, for 10^10 solar mass haloes. Only used in the “new” parameterization, i.e. when USE_MASS_DEPENDENT_ZETA is set to True (in FlagOptions). If so, this is used along with F_STAR10 to determine HII_EFF_FACTOR (which is then unused). See Eq. 11 of Greig+2018 and Sec 2.1 of Park+2018.
+  F_ESC10: -1.0
+  # The “escape fraction for minihalos”, i.e. the fraction of ionizing photons escaping into the IGM, for 10^7 solar mass minihaloes. Only used in the “minihalo” parameterization, i.e. when USE_MINI_HALOS is set to True (in FlagOptions). If so, this is used along with F_ESC7_MINI to determine HII_EFF_FACTOR_MINI (which is then unused). See Eq. 17 of Qin+2020. Given in log10 units.
+  F_ESC7_MINI: -2.0
+  # Self-shielding factor of molecular hydrogen when experiencing LW suppression. Cf. Eq. 12 of Qin+2020. Consistently included in A_LW fit from sims. If used we recommend going back to Macachek+01 A_LW=22.86.
+  F_H2_SHIELD: 0.0
+  # The fraction of galactic gas in stars for 10^10 solar mass haloes. Only used in the “new” parameterization, i.e. when USE_MASS_DEPENDENT_ZETA is set to True (in FlagOptions). If so, this is used along with F_ESC10 to determine HII_EFF_FACTOR (which is then unused). See Eq. 11 of Greig+2018 and Sec 2.1 of Park+2018. Given in log10 units.
+  F_STAR10: -1.3
+  # The fraction of galactic gas in stars for 10^7 solar mass minihaloes. Only used in the “minihalo” parameterization, i.e. when USE_MINI_HALOS is set to True (in FlagOptions). If so, this is used along with F_ESC7_MINI to determine HII_EFF_FACTOR_MINI (which is then unused). See Eq. 8 of Qin+2020. Given in log10 units.
+  F_STAR7_MINI: -2.0
+  # Turnover mass (in log10 solar mass units) for quenching of star formation in halos, due to SNe or photo-heating feedback, or inefficient gas accretion. Only used if USE_MASS_DEPENDENT_ZETA is set to True in FlagOptions. See Sec 2.1 of Park+2018.
+  M_TURN: 8.7
+  # Number of steps used in redshift-space-distortion algorithm. NOT A PHYSICAL PARAMETER.
+  N_RSD_STEPS: 20
+  # Maximum radius of bubbles to be searched.
+  R_BUBBLE_MAX: null
+  # X-ray spectral energy index (cf. Sec 4.1 of Greig+2018). Typical range is (-1, 3).
+  X_RAY_SPEC_INDEX: 1.0
+  # Minimum virial temperature of X-ray emitting sources (unlogged and set dynamically).
+  X_RAY_Tvir_MIN: null
+  # Fractional characteristic time-scale (fraction of hubble time) defining the star-formation rate of galaxies. Only used if USE_MASS_DEPENDENT_ZETA is set to True in FlagOptions. See Sec 2.1, Eq. 3 of Park+2018.
+  t_STAR: 0.5
+
+# based on plank18 https://arxiv.org/pdf/1807.06209.pdf
+cosmo_params: 
+  ### cosmological parameters ###
+  ## https://21cmfast.readthedocs.io/en/latest/reference/_autosummary/inputs/py21cmfast.inputs.CosmoParams.html ##
+  # use default parameters for this section
+  use_default: true
+
+  OMb: 0.04897468161869667
+  OMm: 0.30964144154550644
+  POWER_INDEX: 0.9665
+  SIGMA_8: 0.8102
+  hlittle: 0.6766
+
+user_params:
+  ### hyperparameters for the coeval simulation call ###
+  ## https://21cmfast.readthedocs.io/en/latest/reference/_autosummary/inputs/py21cmfast.inputs.UserParams.html ##
+  # use default parameters for this section
+  use_default: false
+  # Length of the box, in Mpc. Default 300 Mpc.
+  BOX_LEN: 300.0
+  # Number of cells for the low-res box. Default 200.
+  HII_DIM: 200
+  # Number of cells for the high-res box (sampling ICs) along a principal axis. To avoid sampling issues, DIM should be at least 3 or 4 times HII_DIM, and an integer multiple. By default, it is set to 3*HII_DIM.
+  DIM: 600
+  # Whether to use fast Fcoll tables, as described in Appendix of Muñoz+21 (2110.13919). Significant speedup for minihaloes.
+  FAST_FCOLL_TABLES: false
+  # Determines which halo mass function to be used for the normalisation of the collapsed fraction (default Sheth-Tormen). If string should be one of the following codes: 0: PS (Press-Schechter) 1: ST (Sheth-Tormen) 2: Watson (Watson FOF) 3: Watson-z (Watson FOF-z)
+  HMF: 1
+  # If set, the code will run in a mode that minimizes memory usage, at the expense of some CPU/disk-IO. Good for large boxes / small computers.
+  MINIMIZE_MEMORY: false
+  # Factor which allows the creation of non-cubic boxes. It will shorten/lengthen the line of sight dimension of all boxes. NON_CUBIC_FACTOR * DIM/HII_DIM must result in an integer
+  NON_CUBIC_FACTOR: 1.0
+  # Ability to turn off random number generation for initial conditions. Can be useful for debugging and adding in new features
+  NO_RNG: false
+  # Sets the number of processors (threads) to be used for performing 21cmFAST. Default 1.
+  N_THREADS: 6
+  # Whether to perform the Zel’Dovich or 2LPT perturbation on the low or high resolution grid.
+  PERTURB_ON_HIGH_RES: false
+  # Determines which power spectrum to use, default EH (unless USE_RELATIVE_VELOCITIES is True). If string, use the following codes: 0: EH 1: BBKS 2:
+  POWER_SPECTRUM: 0
+  # Whether to use second-order Lagrangian perturbation theory (2LPT). Set this to True if the density field or the halo positions are extrapolated to low redshifts. The current implementation is very naive and adds a factor ~6 to the memory requirements. Reference: Scoccimarro R., 1998, MNRAS, 299, 1097-1118 Appendix D.
+  USE_2LPT: true
+  # Whether or not to use stored FFTW_WISDOMs for improving performance of FFTs
+  USE_FFTW_WISDOM: true
+  # If True, calculates and evaluates quantites using interpolation tables, which is considerably faster than when performing integrals explicitly.
+  USE_INTERPOLATION_TABLES: true
+  # Flag to decide whether to use relative velocities. If True, POWER_SPECTRUM is automatically set to 5. Default False.
+  USE_RELATIVE_VELOCITIES: false
+
+flag_options:
+  ### additional features which can be activated / deactivated if required ###
+  ## https://21cmfast.readthedocs.io/en/latest/reference/_autosummary/inputs/py21cmfast.inputs.FlagOptions.html ##
+  # use default parameters for this section
+  use_default: true
+  # Determines whether to use a fixed vcb=VAVG (regardless of USE_RELATIVE_VELOCITIES). It includes the average effect of velocities but not its fluctuations. See Muñoz+21 (2110.13919).
+  FIX_VCB_AVG: false
+  # Whether to perform inhomogeneous recombinations. Increases the computation time.
+  INHOMO_RECO: false
+  # Whether the minimum halo mass (for ionization) is defined by mass or virial temperature. Automatically True if USE_MASS_DEPENDENT_ZETA is True.
+  M_MIN_in_Mass: false
+  # Whether to perform a small correction to account for the inherent photon non-conservation.
+  PHOTON_CONS: false
+  # Add sub-cell redshift-space-distortions (cf Sec 2.2 of Greig+2018). Will only be effective if USE_TS_FLUCT is True.
+  SUBCELL_RSD: false
+  # Whether to include CMB Heating. (cf Eq.4 of Meiksin 2021, arxiv.org/abs/2105.14516)
+  USE_CMB_HEATING: true
+  # Set to True if intending to find and use the halo field. If False, uses the mean collapse fraction (which is considerably faster).
+  USE_HALO_FIELD: false
+  # Whether to use Lyman-alpha heating. (cf Sec. 3 of Reis+2021, doi.org/10.1093/mnras/stab2089)
+  USE_LYA_HEATING: true
+  # Set to True if using new parameterization. Setting to True will automatically set M_MIN_in_Mass to True.
+  USE_MASS_DEPENDENT_ZETA: false
+  # Set to True if using mini-halos parameterization. If True, USE_MASS_DEPENDENT_ZETA and INHOMO_RECO must be True.
+  USE_MINI_HALOS: false
+  # Whether to perform IGM spin temperature fluctuations (i.e. X-ray heating). Dramatically increases the computation time.
+  USE_TS_FLUCT: false
+  # Auxiliary variable (not input) to check if minihaloes are being used without relative velocities and complain
+  USE_VELS_AUX: false
+
+global_params:
+  ### global arguments for the simulation ###
+  ## https://21cmfast.readthedocs.io/en/latest/reference/_autosummary/inputs/py21cmfast.inputs.GlobalParams.html ##
+  # use default parameters for this section
+  use_default: true
+  # Power law index of the UVB during the EoR. This is only used if INHOMO_RECO is True (in FlagOptions), in order to compute the local mean free path inside the cosmic HII regions.
+  ALPHA_UVB: 5.0
+  # Sub grid scale. If you want to run-down from a very high redshift (>50), you should set this to one.
+  CLUMPING_FACTOR: 2.0
+  # A transition value for the interpolation tables for calculating the number of ionising photons produced given the input parameters. Log sampling is desired, however the numerical accuracy near the critical density for collapse (i.e. 1.69) broke down. Therefore, below the value for CRIT_DENS_TRANSITION log sampling of the density values is used, whereas above this value linear sampling is used.
+  CRIT_DENS_TRANSITION: 1.5
+  # The delta_crit to be used for determining whether a halo exists in a cell 0: delta_crit is constant (i.e. 1.686) 1: delta_crit is the sheth tormen ellipsoidal collapse correction to delta_crit
+  DELTA_CRIT_MODE: 1
+  #  Factor by which to scroll through filter radius for halos
+  DELTA_R_FACTOR: 1.100000023841858
+  # Factor by which to scroll through filter radius for bubbles
+  DELTA_R_HII_FACTOR: 1.100000023841858
+  # Whether to evolve the density field with linear theory (instead of 1LPT or Zel’Dovich). If choosing this option, make sure that your cell size is in the linear regime at the redshift of interest. Otherwise, make sure you resolve small enough scales, roughly we find BOX_LEN/DIM should be < 1Mpc
+  EVOLVE_DENSITY_LINEARLY: 0
+  # Filter to use for smoothing. 0. tophat 1. gaussian
+  FILTER: 0
+  # Choose which algorithm used to find HII bubbles. Options are: (1) Mesinger & Furlanetto 2007 method of overlapping spheres: paint an ionized sphere with radius R, centered on pixel where R is filter radius. This method, while somewhat more accurate, is slower than (2), especially in mostly ionized universes, so only use for lower resolution boxes (HII_DIM<~400). (2) Center pixel only method (Zahn et al. 2007). This is faster.
+  FIND_BUBBLE_ALGORITHM: 2
+  # Filter for the density field used to generate the halo field with EPS 0: real space top hat filter 1: sharp k-space filter 2: gaussian filter
+  HALO_FILTER: 0
+  # Filter used for smoothing the linear density field to obtain the collapsed fraction: 0: real space top hat filter 1: sharp k-space filter 2: gaussian filter
+  HEAT_FILTER: 0
+  # Filter for the Halo or density field used to generate ionization field: 0. real space top hat filter 1. k-space top hat filter 2. gaussian filter
+  HII_FILTER: 1
+  # Rounding error on the ionization fraction. If the mean xHI is greater than 1 - HII_ROUND_ERR, then finding HII bubbles is skipped, and a homogeneous xHI field of ones is returned. 
+  HII_ROUND_ERR: 9.999999747378752e-06
+  # Used to perturb field
+  INITIAL_REDSHIFT: 300.0
+  # Maximum velocity gradient along the line of sight in units of the hubble parameter at z. This is only used in computing the 21cm fields.
+  ## Setting this too high can add spurious 21cm power in the early stages, due to the 1-e^-tau ~ tau approximation (see Mesinger’s 21cm intro paper and mao+2011). However, this is still a good approximation at the <~10% level.
+  MAX_DVDR: 0.20000000298023224
+  # Required for using the interpolation tables for the number of ionising photons. This is a lower limit for the density values that is slightly larger than -1. Defined as a density contrast.
+  MIN_DENSITY_LOW_LIMIT: 9.000000034120603e-08
+  # Maximum mass when performing integral on halo mass function.
+  M_MAX_INTEGRAL: 1.0000000272564224e+16
+  # Minimum mass when performing integral on halo mass function.
+  M_MIN_INTEGRAL: 100000.0
+  # Mass of WDM particle in keV. Ignored if P_CUTOFF is False.
+  M_WDM: 2.0
+  # Number of bins for the luminosity function calculation.
+  NBINS_LF: 100
+  # Number of spherical annuli used to compute df_coll/dz’ in the simulation box. The spherical annuli are evenly spaced in logR, ranging from the cell size to the box size. spin_temp() will create this many boxes of size HII_DIM, so be wary of memory usage if values are high.
+  NUM_FILTER_STEPS_FOR_Ts: 40
+  # This is the upper limit of the soft X-ray band (0.5 - 2 keV) used for normalising the X-ray SED to observational limits set by the X-ray luminosity. Used for performing the heating rate integrals.
+  NU_X_BAND_MAX: 2000.0
+  # An upper limit (must be set beyond NU_X_BAND_MAX) for performing the rate integrals. Given the X-ray SED is modelled as a power-law, this removes the potential of divergent behaviour for the heating rates. Chosen purely for numerical convenience though it is motivated by the fact that observed X-ray SEDs apprear to turn-over around 10-100 keV (Lehmer et al. 2013, 2015)
+  NU_X_MAX: 10000.0
+  # If not using the halo field to generate HII regions, we provide the option of including Poisson scatter in the number of sources obtained through the conditional collapse fraction (which only gives the mean collapse fraction on a particular scale. If the predicted mean collapse fraction is less than N_POISSON * M_MIN, then Poisson scatter is added to mimic discrete halos on the subgrid scale (see Zahn+2010).Use a negative number to turn it off.
+  ## If you are interested in snapshots of the same realization at several redshifts,it is recommended to turn off this feature, as halos can stochastically “pop in and out of” existence from one redshift to the next.
+  N_POISSON: 5
+  # Relative density of curvature.
+  OMk: 0.0
+  #  Relative density of neutrinos in the universe.
+  OMn: 0.0
+  OMr: 8.600000001024455e-05
+  # Fractional density of the universe with respect to critical density. Set to unity for a flat universe.
+  OMtot: 1.0
+  # Finding halos can be made more efficient if the filter size is sufficiently large that we can switch to the collapse fraction at a later stage.
+  OPTIMIZE: 0
+  # Minimum mass on which the optimization for the halo finder will be used.
+  OPTIMIZE_MIN_MASS: 99999997952.0
+  # Turn on Warm-Dark-matter power suppression.
+  P_CUTOFF: 0
+  # Beyond PhotonConsEnd the photon non-conservation correction is extrapolated to yield smooth reionisation histories. This sets the lowest neutral fraction value that the photon non-conservation correction will be applied to.
+  PhotonConsAsymptoteTo: 0.009999999776482582
+  # An end-point for where the photon non-conservation correction is performed exactly. This is required to remove undesired numerical artifacts in the resultant neutral fraction histories.
+  PhotonConsEnd: 0.30000001192092896
+  PhotonConsEndCalibz: 3.5
+  # A starting value for the neutral fraction where the photon non-conservation correction is performed exactly. Any value larger than this the photon non-conservation correction is not performed (i.e. the algorithm is perfectly photon conserving).
+  PhotonConsStart: 0.9950000047683716
+  # Stellar Population responsible for early heating (2 or 3)
+  Pop: 2
+  # Number of ionizing photons per baryon for population 2 stellar species.
+  Pop2_ion: 5000.0
+  # Number of ionizing photons per baryon for population 3 stellar species.
+  Pop3_ion: 44021.0
+  # Minimum radius of bubbles to be searched in cMpc. One can set this to 0, but should be careful with shot noise if running on a fine, non-linear density grid. Default is set to L_FACTOR which is (4PI/3)^(-1/3) = 0.620350491.
+  R_BUBBLE_MIN: 0.6203504800796509
+  # When using USE_HALO_FIELD, it is used as a factor the halo’s radius, R, so that the effective radius is R_eff = R_OVERLAP_FACTOR * R. Halos whose centers are less than R_eff away from another halo are not allowed. R_OVERLAP_FACTOR = 1 is fully disjoint R_OVERLAP_FACTOR = 0 means that centers are allowed to lay on the edges of neighboring halos.
+  R_OVERLAP_FACTOR: 1.0
+  # Maximum radius of influence for computing X-ray and Lya pumping in cMpc. This should be larger than the mean free path of the relevant photons.
+  R_XLy_MAX: 500.0
+  # Determines the smoothing length to use if SMOOTH_EVOLVED_DENSITY_FIELD is True.
+  R_smooth_density: 0.20000000298023224
+  # Whether or not to use the recombination term when calculating the filling factor for performing the photon non-conservation correction.
+  RecombPhotonCons: 0
+  # Sheth-Tormen parameter for ellipsoidal collapse (for HMF).
+  ## The best fit b and c ST params for these 3D realisations have a redshift, and a DELTA_R_FACTOR dependence, as shown in Mesinger+. For converged mass functions at z~5-10, set DELTA_R_FACTOR=1.1 and SHETH_b=0.15 and SHETH_c~0.05.
+  ## For most purposes, a larger step size is quite sufficient and provides an excellent match to N-body and smoother mass functions, though the b and c parameters should be changed to make up for some “stepping-over” massive collapsed halos (see Mesinger, Perna, Haiman (2005) and Mesinger et al., in preparation).
+  ## For example, at z~7-10, one can set DELTA_R_FACTOR=1.3 and SHETH_b=0.15
+  ## and SHETH_c=0.25, to increase the speed of the halo finder.
+  SHETH_b: 0.15000000596046448
+  # Sheth-Tormen parameter for ellipsoidal collapse (for HMF). See notes for SHETH_b.
+  SHETH_c: 0.05000000074505806
+  # If True, the zeldovich-approximation density field is additionally smoothed (aside from the implicit boxcar smoothing performed when re-binning the ICs from DIM to HII_DIM) with a Gaussian filter of width R_smooth_density*BOX_LEN/HII_DIM. The implicit boxcar smoothing in perturb_field() bins the density field on scale DIM/HII_DIM, similar to what Lagrangian codes do when constructing Eulerian grids. In other words, the density field is quantized into (DIM/HII_DIM)^3 values. If your usage requires smooth density fields, it is recommended to set this to True. This also decreases the shot noise present in all grid based codes, though it overcompensates by an effective loss in resolution. Added in 1.1.0.
+  SMOOTH_EVOLVED_DENSITY_FIELD: 0
+  # If positive, then overwrite default boundary conditions for the evolution equations with this value. The default is to use the value obtained from RECFAST. See also XION_at_Z_HEAT_MAX.
+  TK_at_Z_HEAT_MAX: -1.0
+  # The peak gas temperatures behind the supersonic ionization fronts during reionization.
+  T_RE: 20000.0
+  # Whether to use velocity corrections in 21-cm fields
+  ## The approximation used to include peculiar velocity effects works only in the linear regime, so be careful using this (see Mesinger+2010)
+  T_USE_VELOCITIES: 1
+  USE_ADIABATIC_FLUCTUATIONS: true
+  USE_FAST_ATOMIC: false
+  # Avg value of the DM-b relative velocity [im km/s], ~0.9*SIGMAVCB (=25.86 km/s) normally.
+  VAVG: 25.860000610351562
+  # If positive, then overwrite default boundary conditions for the evolution equations with this value. The default is to use the value obtained from RECFAST. See also TK_at_Z_HEAT_MAX.
+  XION_at_Z_HEAT_MAX: -1.0
+  # Helium fraction.
+  Y_He: 0.24500000476837158
+  # Logarithmic redshift step-size used in the z’ integral. Logarithmic dz. Decreasing (closer to unity) increases total simulation time for lightcones, and for Ts calculations.
+  ZPRIME_STEP_FACTOR: 1.0199999809265137
+  # Maximum redshift used in the Tk and x_e evolution equations. Temperature and x_e are assumed to be homogeneous at higher redshifts. Lower values will increase performance.
+  Z_HEAT_MAX: 35.0
+  # Redshift of helium reionization, currently only used for tau_e
+  Zreion_HeII: 3.0
+  # Degrees of freedom of WDM particles; 1.5 for fermions.
+  g_x: 1.5
+  # Dark energy equation of state parameter (wl = -1 for vacuum )
+  wl: -1.0
