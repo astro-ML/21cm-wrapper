@@ -1,5 +1,0 @@
-py21cmfast=3.3.1
-matplotlib
-numpy
-yaml
-powerbox
