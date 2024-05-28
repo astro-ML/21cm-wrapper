@@ -13,6 +13,7 @@ import random
 import yaml
 import itertools
 from powerbox.tools import get_power
+import pickle
 
 # set your cache path here
 cache_path = "../_cache"
@@ -61,11 +62,12 @@ class Parameters():
         if self.prechange:
             self.prechange = False
             self.lcone_quantities = self.input_params.pop("lightcone_quantities")
-            self.z = [self.input_params["redshift"] + (self.input_params["max_redshift"] - self.input_params["redshift"])/zsteps * i for i in range(zsteps+1)] 
+            #self.z = [self.input_params["redshift"] + (self.input_params["max_redshift"] - self.input_params["redshift"])/zsteps * i for i in range(zsteps+1)] 
+            self.z = np.linspace(self.input_params("redshift"), self.input_params("redshift"), zsteps)
             self.input_params["redshift"] = self.z
             self.input_params.pop("max_redshift")
         else:
-            self.prechange = False
+            self.prechange = True
             self.input_params["lightcone_quantities"] = self.lcone_quantities
             self.input_params["redshift"] = self.z[0]
             self.input_params["max_redshift"] = self.z[-1]
@@ -247,6 +249,10 @@ class Simulation(Parameters):
         plt.show()
         
     # Helper function to recursively generate combinations
+        plt.savefig("./ps_test.jpg")
+        plt.show()
+        
+    # Helper function to recursively generate combinations
     def generate_combinations(self, d):
         keys, values = zip(*d.items())
         # For each value, if it's a dict, recursively call generate_combinations
@@ -263,3 +269,9 @@ class Simulation(Parameters):
     def clear(self):
         '''Clear the data/runs cache'''
         self.data.clear()
+        
+    def save(self, name):
+        pickle.dumb(self.data, name)
+        
+    def load(self, name):
+        self.data = pickle.load(name)
