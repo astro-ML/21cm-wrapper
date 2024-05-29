@@ -63,7 +63,7 @@ class Parameters():
             self.prechange = False
             self.lcone_quantities = self.input_params.pop("lightcone_quantities")
             #self.z = [self.input_params["redshift"] + (self.input_params["max_redshift"] - self.input_params["redshift"])/zsteps * i for i in range(zsteps+1)] 
-            self.z = np.linspace(self.input_params["redshift"], self.input_params["redshift"], zsteps)
+            self.z = np.linspace(self.input_params["redshift"], self.input_params["redshift"], zsteps).tolist()
             self.input_params["redshift"] = self.z
             self.input_params.pop("max_redshift")
         else:
@@ -268,7 +268,7 @@ class Simulation(Parameters):
         self.data.clear()
         
     def save(self, name):
-        pickle.dumb(self.data, name)
+        pickle.dump(self.data, name)
         
     def load(self, name):
         self.data = pickle.load(name)
