@@ -87,13 +87,13 @@ user_params:
   # Determines which halo mass function to be used for the normalisation of the collapsed fraction (default Sheth-Tormen). If string should be one of the following codes: 0: PS (Press-Schechter) 1: ST (Sheth-Tormen) 2: Watson (Watson FOF) 3: Watson-z (Watson FOF-z)
   HMF: 1
   # If set, the code will run in a mode that minimizes memory usage, at the expense of some CPU/disk-IO. Good for large boxes / small computers.
-  MINIMIZE_MEMORY: false
+  MINIMIZE_MEMORY: true
   # Factor which allows the creation of non-cubic boxes. It will shorten/lengthen the line of sight dimension of all boxes. NON_CUBIC_FACTOR * DIM/HII_DIM must result in an integer
   NON_CUBIC_FACTOR: 1.0
   # Ability to turn off random number generation for initial conditions. Can be useful for debugging and adding in new features
   NO_RNG: false
   # Sets the number of processors (threads) to be used for performing 21cmFAST. Default 1.
-  N_THREADS: 6
+  N_THREADS: 2
   # Whether to perform the Zel’Dovich or 2LPT perturbation on the low or high resolution grid.
   PERTURB_ON_HIGH_RES: false
   # Determines which power spectrum to use, default EH (unless USE_RELATIVE_VELOCITIES is True). If string, use the following codes: 0: EH 1: BBKS 2:

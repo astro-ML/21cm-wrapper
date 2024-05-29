@@ -63,7 +63,7 @@ class Parameters():
             self.prechange = False
             self.lcone_quantities = self.input_params.pop("lightcone_quantities")
             #self.z = [self.input_params["redshift"] + (self.input_params["max_redshift"] - self.input_params["redshift"])/zsteps * i for i in range(zsteps+1)] 
-            self.z = np.linspace(self.input_params("redshift"), self.input_params("redshift"), zsteps)
+            self.z = np.linspace(self.input_params["redshift"], self.input_params["redshift"], zsteps)
             self.input_params["redshift"] = self.z
             self.input_params.pop("max_redshift")
         else:
@@ -81,7 +81,7 @@ class Parameters():
 class Simulation(Parameters):
     '''Dynamically execute and plot simulations.'''
     def __init__(self, random_seed=True):
-        '''random_seed (bool): If true, each simulation is executed with a random generated seed. If you want to reproduce a simulation, set this to False.'''
+        '''random_seed (bool): Isf true, each simulation is executed with a random generated seed. If you want to reproduce a simulation, set this to False.'''
         super().__init__(random_seed=random_seed)
         print(f"Using 21cmFAST version {p21c.__version__}")
         self.data = []
@@ -97,6 +97,7 @@ class Simulation(Parameters):
         self.pbox_run(zsteps)
         with p21c.global_params.use(**self.global_params):
             for _ in range(runs):
+                if self.randseed: self.randomize()
                 self.kwargs_update(kargs)
                 self.data.append(p21c.run_coeval(**self.input_params))
         self.pbox_run(zsteps)
@@ -245,10 +246,6 @@ class Simulation(Parameters):
                         ax[bin].set_yscale("log")
         
         plt.tight_layout()
-        plt.savefig("./ps_test.jpg")
-        plt.show()
-        
-    # Helper function to recursively generate combinations
         plt.savefig("./ps_test.jpg")
         plt.show()
         
