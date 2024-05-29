@@ -268,7 +268,9 @@ class Simulation(Parameters):
         self.data.clear()
         
     def save(self, name):
-        pickle.dump(self.data, name)
+        with open(name, 'wb') as f:
+            pickle.dump(self.data, f)
         
     def load(self, name):
-        self.data = pickle.load(name)
+        with open(name, 'rb') as f:
+            self.data = pickle.load(f)
