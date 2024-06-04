@@ -91,7 +91,7 @@ class Simulation(Parameters):
         '''Returns length of the data-array'''
         return len(self.data)
         
-    def run_box(self, runs=1, zsteps=1, kargs={}, nosave=False):
+    def run_box(self, runs=1, zsteps=1, kargs={}, nosave=False, cache=True):
         '''Run a simple box simulation'''
         self.simtype = 0
         self.pbox_run(zsteps)
@@ -99,7 +99,7 @@ class Simulation(Parameters):
             for _ in range(runs):
                 if self.randseed: self.randomize()
                 self.kwargs_update(kargs)
-                run = p21c.run_coeval(**self.input_params)
+                run = p21c.run_coeval(**self.input_params, write=cache)
                 if not nosave: 
                     self.data.append(run)
                     self.pbox_run(zsteps)
@@ -205,7 +205,7 @@ class Simulation(Parameters):
                     plt.savefig("./imshow_test.jpg")
                     plt.show()     
                     
-    def plot_ps(self, bins=10, run=[-1], compare=False, observational_axis = False, logp = True, z_bins=50):
+    def plot_ps(self, bins=10, run=[-1], compare=False, observational_axis = False, logp = True):
         '''Plot the power spectra given a fixed bin number. (Future: Do the same with a dz range but p21cm saves lightcone with constant physical distances not redshift ->)
         run (array): plot ps of given run, -1 to print them all
         compare (bool): Activating compare puts all simulations with equal redshift range in a single plot (useful to compare the ps of different simualtions)
@@ -228,7 +228,7 @@ class Simulation(Parameters):
                 for bin in range(w):
                     physical_size = self.data[r].lightcone_distances[binspace[bin+1]] - self.data[r].lightcone_distances[binspace[bin]]
                     #print(f"binspace: {binspace[bin]}, brightness map: {self.data[r].brightness_temp[:,:,binspace[bin]:binspace[bin+1]].shape}, boxlength= {(*self.data[r].brightness_temp.shape[:2], physical_size)}")
-                    ps = get_power(deltax= self.data[r].brightness_temp[:,:,binspace[bin]:binspace[bin+1]], boxlength=(*self.data[r].lightcone_dimensions[:2], physical_size), bin_ave=True, ignore_zero_mode=True, get_variance=False, bins=z_bins)
+                    ps = get_power(deltax= self.data[r].brightness_temp[:,:,binspace[bin]:binspace[bin+1]], boxlength=(*self.data[r].brightness_temp.shape[:2], physical_size), bin_ave=True, ignore_zero_mode=True, get_variance=False, bins=50)
                     ax[r,bin].plot(x_map(ps[1]), ps[0]*ps[1]**3)
                     ax[-1,bin].set_xlabel('m in Mpc^3' if observational_axis else "k in Mpc^-3")
                     ax[0,bin].set_title(f'{round(self.data[r].lightcone_redshifts[binspace[bin]],1)} < z < {round(self.data[r].lightcone_redshifts[binspace[bin+1]],1)}')
@@ -237,21 +237,20 @@ class Simulation(Parameters):
                         ax[r,bin].set_xscale("log")
                         ax[r,bin].set_yscale("log")
         else:
-            w = bins - 1 
-            fig, ax = plt.subplots(run,figsize=(4*run,4))
+            h,w = len(run), bins-1
+            fig, ax = plt.subplots(w,1, figsize=(4*h,4*w))
             for r in run:
                 for bin in range(w):
                     physical_size = self.data[r].lightcone_distances[binspace[bin+1]] - self.data[r].lightcone_distances[binspace[bin]]
-                    ps = get_power(deltax= self.data[r].brightness_temp[:,:,binspace[bin]:binspace[bin+1]], boxlength=(*self.data[r].lightcone_dimensions[:2], physical_size), bin_ave=True, ignore_zero_mode=True, get_variance=False,bins=z_bins)
-                    print(ps[1])
-                    ax.plot(x_map(ps[1]), ps[0]*ps[1]**3, label=f"{round(self.data[r].lightcone_redshifts[binspace[bin]],1)} < z < {round(self.data[r].lightcone_redshifts[binspace[bin+1]],1)}")
-                    #ax.set_title(f'{round(self.data[r].lightcone_redshifts[binspace[bin]],1)} < z < {round(self.data[r].lightcone_redshifts[binspace[bin+1]],1)}')
-                    ax.set_xlabel('m in Mpc^3' if observational_axis else "k in Mpc^-3")
-                    ax.set_ylabel(f"P(k) * k ^ 3 ; run: {r}")
-                    ax.legend()
+                    ps = get_power(deltax= self.data[r].brightness_temp[:,:,binspace[bin]:binspace[bin+1]], boxlength=(*self.data[r].brightness_temp.shape[:2], physical_size), bin_ave=True, ignore_zero_mode=True, get_variance=False,bins=50)
+                    ax[bin].plot(x_map(ps[1]), ps[0]*ps[1]**3, label=f"run {r}")
+                    ax[bin].set_title(f'{round(self.data[r].lightcone_redshifts[binspace[bin]],1)} < z < {round(self.data[r].lightcone_redshifts[binspace[bin+1]],1)}')
+                    ax[bin].set_xlabel('m in Mpc^3' if observational_axis else "k in Mpc^-3")
+                    ax[bin].set_ylabel(f"P(k) * k ^ 3 ; run: {r}")
+                    ax[bin].legend()
                     if logp:
-                        ax.set_xscale("log")
-                        ax.set_yscale("log")
+                        ax[bin].set_xscale("log")
+                        ax[bin].set_yscale("log")
         
         plt.tight_layout()
         plt.savefig("./ps_test.jpg")
