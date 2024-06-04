@@ -1,10 +1,15 @@
+### 
 input_params:
   lightcone_quantities:
     - brightness_temp
-    - xH_box
-    - density
-  redshift: 8
-  max_redshift: 12
+    #- xH_box
+    #- density
+  redshift: 10
+  max_redshift: 35
+  random_seed: 42
+  override: false # if true, override existing runs, if false, continue where it stopped
+  data_path: "./data" # path for the output
+  file_name: "run" # the output will have the format: {file_name} + "_{run}.h5"
 
 astro_params:
   ### primary variables to change ###
@@ -16,7 +21,7 @@ astro_params:
   # <-> # The ionizing efficiency of high-z galaxies (zeta, from Eq. 2 of Greig+2015). Higher values tend to speed up reionization.
   HII_EFF_FACTOR: 30.0
   # <-> # Minimum virial temperature of star-forming haloes (Sec 2.1.3 of Greig+2015). Given in log10 units.
-  ION_Tvir_MIN: 4.69897
+  ION_Tvir_MIN: 4.6 #4.69897
   # <-> # The specific X-ray luminosity per unit star formation escaping host galaxies. Cf. Eq. 6 of Greig+2018. Given in log10 units.
   L_X: 40.0
   # <-> # The specific X-ray luminosity per unit star formation escaping host galaxies for minihalos. Cf. Eq. 23 of Qin+2020. Given in log10 units.
@@ -77,23 +82,23 @@ user_params:
   # use default parameters for this section
   use_default: false
   # Length of the box, in Mpc. Default 300 Mpc.
-  BOX_LEN: 500.0
+  BOX_LEN: 150
   # Number of cells for the low-res box. Default 200.
-  HII_DIM: 356
+  HII_DIM: 100
   # Number of cells for the high-res box (sampling ICs) along a principal axis. To avoid sampling issues, DIM should be at least 3 or 4 times HII_DIM, and an integer multiple. By default, it is set to 3*HII_DIM.
-  DIM: 1536
+  DIM: 300
   # Whether to use fast Fcoll tables, as described in Appendix of Muñoz+21 (2110.13919). Significant speedup for minihaloes.
   FAST_FCOLL_TABLES: false
   # Determines which halo mass function to be used for the normalisation of the collapsed fraction (default Sheth-Tormen). If string should be one of the following codes: 0: PS (Press-Schechter) 1: ST (Sheth-Tormen) 2: Watson (Watson FOF) 3: Watson-z (Watson FOF-z)
   HMF: 1
   # If set, the code will run in a mode that minimizes memory usage, at the expense of some CPU/disk-IO. Good for large boxes / small computers.
-  MINIMIZE_MEMORY: true
+  MINIMIZE_MEMORY: false
   # Factor which allows the creation of non-cubic boxes. It will shorten/lengthen the line of sight dimension of all boxes. NON_CUBIC_FACTOR * DIM/HII_DIM must result in an integer
   NON_CUBIC_FACTOR: 1.0
-  # Ability to turn off random number generation for initial conditions. Can be useful for debugging and adding in new features
+  # Ability to turn off random number generation for initial conditions. Can be useful for debugging and adding in new features, if false the random_seed parameter will be ignored and a new seed will be sampled from [0,99999] every run
   NO_RNG: false
   # Sets the number of processors (threads) to be used for performing 21cmFAST. Default 1.
-  N_THREADS: 2
+  N_THREADS: 6
   # Whether to perform the Zel’Dovich or 2LPT perturbation on the low or high resolution grid.
   PERTURB_ON_HIGH_RES: false
   # Determines which power spectrum to use, default EH (unless USE_RELATIVE_VELOCITIES is True). If string, use the following codes: 0: EH 1: BBKS 2:
@@ -111,7 +116,7 @@ flag_options:
   ### additional features which can be activated / deactivated if required ###
   ## https://21cmfast.readthedocs.io/en/latest/reference/_autosummary/inputs/py21cmfast.inputs.FlagOptions.html ##
   # use default parameters for this section
-  use_default: true
+  use_default: false
   # Determines whether to use a fixed vcb=VAVG (regardless of USE_RELATIVE_VELOCITIES). It includes the average effect of velocities but not its fluctuations. See Muñoz+21 (2110.13919).
   FIX_VCB_AVG: false
   # Whether to perform inhomogeneous recombinations. Increases the computation time.
@@ -133,7 +138,7 @@ flag_options:
   # Set to True if using mini-halos parameterization. If True, USE_MASS_DEPENDENT_ZETA and INHOMO_RECO must be True.
   USE_MINI_HALOS: false
   # Whether to perform IGM spin temperature fluctuations (i.e. X-ray heating). Dramatically increases the computation time.
-  USE_TS_FLUCT: false
+  USE_TS_FLUCT: true
   # Auxiliary variable (not input) to check if minihaloes are being used without relative velocities and complain
   USE_VELS_AUX: false
 
