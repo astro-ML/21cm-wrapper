@@ -2,21 +2,22 @@ import py21cmfast as p21c
 from matplotlib import pyplot as plt
 import os 
 import logging, sys, os
-logger = logging.getLogger('21cmFAST')
-logger.setLevel(logging.INFO)
+#logger = logging.getLogger('21cmFAST')
+#logger.setLevel(logging.INFO)
 from py21cmfast import plotting
 from py21cmfast import cache_tools
 #from multiprocessing import Pool
-import timeit
+#import timeit
 import numpy as np
 import random
 import yaml
 import itertools
 from powerbox.tools import get_power
-import pickle
+#import pickle
+import fnmatch
 
 # set your cache path here
-cache_path = "../_cache"
+cache_path = "./_cache"
 
 if not os.path.exists(cache_path):
     os.mkdir(cache_path)
@@ -27,13 +28,14 @@ p21c.config['direc'] = cache_path
 
 class Parameters():    
     '''Auxillary class to initialize and update parameters given a config file or on the fly.'''
-    def __init__(self, random_seed=True, parameter_path="./"):
-        self.prechange = True
-        self.random_seed = random_seed
+    def __init__(self, parameter_path):
+        # set bool for box-lightcone-simulation switch
+        self.box = False
+        # load parameter file
         with open(parameter_path + "parameter.yaml", 'r') as file:
             parameter = yaml.safe_load(file)
-        
-        
+        # set default configuration given by parameter file
+        self.random_seed = parameter["user_params"]["NO_RNG"]
         use_default = []
         for key in parameter.keys():
             if key == "input_params":
@@ -52,79 +54,100 @@ class Parameters():
         parameter.pop("global_params")
         
         self.input_params.update(parameter)
-        self.standard_config = self.input_params.copy() 
+        
+        self.init_params = self.input_params
+        
+        # initialize saving procedure
+        self.data_path = self.init_params.pop["input_params"]["data_path"]
+        self.data_name = self.init_params.pop["input_params"]["file_name"] + "_"
+        override = self.init_params.pop["input_params"]["override"]
+        if not os.path.exists(self.data_path):
+            os.mkdir(self.data_path)
+        # check if some files may already exist
+        self.run_counter = 0 if override else len(fnmatch.filter(os.listdir(self.data_path), self.data_name + "*"))
+        # save the initial configuration?
+        # self.standard_config = self.input_params.copy() 
         
     def kwargs_update(self, kargs):
+        '''Update the parameter config given kargs'''
         self.input_params.update(kargs)
         
-            
-    def pbox_run(self, zsteps):
-        if self.prechange:
-            self.prechange = False
-            self.lcone_quantities = self.input_params.pop("lightcone_quantities")
-            #self.z = [self.input_params["redshift"] + (self.input_params["max_redshift"] - self.input_params["redshift"])/zsteps * i for i in range(zsteps+1)] 
-            self.z = np.linspace(self.input_params["redshift"], self.input_params["redshift"], zsteps).tolist()
-            self.input_params["redshift"] = self.z
-            self.input_params.pop("max_redshift")
-        else:
-            self.prechange = True
-            self.input_params["lightcone_quantities"] = self.lcone_quantities
-            self.input_params["redshift"] = self.z[0]
-            self.input_params["max_redshift"] = self.z[-1]
+    def kwargs_revert(self):
+        '''Revert changes in the parameters'''
+        self.init_params = self.init_params
+    
+    @staticmethod
+    def wrap_params(params):
+        '''Change the parameter file to run a single box and revert the changes afterwards.
+        This is necessary or else 21cmfast returns an error.'''
+        params.pop("lightcone_quantities")
+        params.pop("max_redshift")
+        return p21c.run_coeval(**params)[0]
             
     def randomize(self):
-        self.input_params["random_seed"] = random.randint(0,99999)
+        '''Shuffle random_seed'''
+        if self.random_seed: self.input_params["random_seed"] = random.randint(0,99999)
                 
             
         
     
 class Simulation(Parameters):
     '''Dynamically execute and plot simulations.'''
-    def __init__(self, random_seed=True):
-        '''random_seed (bool): Isf true, each simulation is executed with a random generated seed. If you want to reproduce a simulation, set this to False.'''
-        super().__init__(random_seed=random_seed)
+    def __init__(self, parameter_path="./", save_inclass = False, save_ondisk = True, write_cache=False, debug=False):
+        '''parameter_file (str): path to parameter.yaml
+        save_inclass (bool): If set true, results are saved as a list in the class, very useful for testing and quick analysis. If False, results are saved as a file
+        save_ondisk (bool): If set True, save results on disk
+        write_cache (bool): If true, use the included 21cmfast cache, useful when doing repeated simulations with same seed and init conditions.
+        debug (bool): Print many things along the way if something is screwed again.'''
+        super().__init__(parameter_path=parameter_path)
         print(f"Using 21cmFAST version {p21c.__version__}")
-        self.data = []
-        self.randseed = random_seed
+        self.sic = save_inclass
+        self.sod = save_ondisk
+        self.debug = debug
+        if save_inclass: self.data = []
+        self.input_params['write'] = write_cache
         
     def __len__(self):
         '''Returns length of the data-array'''
         return len(self.data)
         
-    def run_box(self, runs=1, zsteps=1, kargs={}, nosave=False, cache=True):
-        '''Run a simple box simulation'''
+    def run_box(self, kargs={}, commit=False):
+        '''Run a simple box simulation
+        kargs (dict): Change parameters on-the-fly for this run
+        commit (bool): If true, results are returned'''
+        # depricated, but plotting still depends on it
         self.simtype = 0
-        self.pbox_run(zsteps)
         with p21c.global_params.use(**self.global_params):
-            for _ in range(runs):
-                if self.randseed: self.randomize()
-                self.kwargs_update(kargs)
-                run = p21c.run_coeval(**self.input_params, write=cache)
-                if not nosave: 
-                    self.data.append(run)
-                    self.pbox_run(zsteps)
-                else:
-                    self.pbox_run(zsteps) 
-                    return run
+            self.randomize()
+            run = self.wrap_params(self.input_params)
+            if commit: return run
+            if self.sic: self.data.append(run)
+            if self.sod: self.run_counter = self.save(run, self.data_name, self.data_path, self.run_counter)
                 
         
     
-    def run_lightcone(self, runs=1, kargs={}):
+    def run_lightcone(self, kargs={}, commit = False):
         '''Run a simple lightcone simulation'''
+        # depricated, but plotting still depends on it
         self.simtype = 1
         with p21c.global_params.use(**self.global_params):
-            for _ in range(runs):
-                if self.randseed: self.randomize()
-                self.kwargs_update(kargs)
-                self.data.append(p21c.run_lightcone(**self.input_params))
+            self.randomize()
+            run = p21c.run_lightcone(**self.input_params)
+            if commit: return run
+            if self.sic: self.data.append(run)
+            if self.sod: self.run_counter = self.save(run, self.data_name, self.data_path, self.run_counter)
+            
                 
-    def run_fixed_multi_lightcone(self, rargs):
+    def run_multi_lightcone(self, mkargs):
         '''Compute multiple lightcones given a list of parameters as a dict with list entries
         e.g. rargs = {"random_seed": [1,2], "astro_params": {"HII_EFF_FACTOR": [29,31]}, NU_X_THRESH": [1,2,3]}, ...}'''
-        for run_params in self.generate_combinations(rargs):
+        for run_params in self.generate_combinations(mkargs):
             print("Parameter run: ",run_params)
-            self.run_lightcone(runs=1, kargs=run_params)
-            
+            self.run_lightcone(kargs=run_params)
+    
+    
+    
+    # print functions need to be rewritten in a modular way ... may not working atm
     def plot_global_properties(self, run=[-1], observational_axis = False, print_params = ['']):
         '''Make a plot of the global quantities of the lightcone
         run: array of run_ids which should be printed
@@ -256,16 +279,24 @@ class Simulation(Parameters):
         plt.savefig("./ps_test.jpg")
         plt.show()
         
-    # Helper function to recursively generate combinations
     def generate_combinations(self, d):
+        '''Helper function to recursively generate combinations'''
         keys, values = zip(*d.items())
-        # For each value, if it's a dict, recursively call generate_combinations
         values = [self.generate_combinations(v) if isinstance(v, dict) else v for v in values]
-        # Generate all combinations using itertools.product
         for combination in itertools.product(*values):
             yield dict(zip(keys, combination))
         return self.generate_combinations(d)
 
+    @staticmethod
+    def save(obj, fname, direc, counter):
+        obj.save(fname=fname+str(counter), direc=direc)
+        return counter + 1
+    
+
+"""
+    def load(self, name):
+        with open(name, 'rb') as f:
+            self.data = pickle.load(f)
     def pop(self,idx):
         '''Delete a run with idx'''
         self.data.pop(idx)
@@ -273,11 +304,4 @@ class Simulation(Parameters):
     def clear(self):
         '''Clear the data/runs cache'''
         self.data.clear()
-        
-    def save(self, name):
-        with open(name, 'wb') as f:
-            pickle.dump(self.data, f)
-        
-    def load(self, name):
-        with open(name, 'rb') as f:
-            self.data = pickle.load(f)
+"""     
