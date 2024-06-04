@@ -28,7 +28,7 @@ p21c.config['direc'] = cache_path
 
 class Parameters():    
     '''Auxillary class to initialize and update parameters given a config file or on the fly.'''
-    def __init__(self, parameter_path):
+    def __init__(self, parameter_path, file_name, data_path, override, debug):
         # set bool for box-lightcone-simulation switch
         self.box = False
         # load parameter file
@@ -44,6 +44,7 @@ class Parameters():
                 print(f"use {key} default config: {parameter[key]["use_default"]}")
                 use_default.append(parameter[key]["use_default"])
                 parameter[key].pop("use_default")
+        
         parameter.pop("input_params")
         
         self.astro_params = parameter["astro_params"] if not use_default[0] else p21c.AstroParams()
@@ -55,22 +56,25 @@ class Parameters():
         
         self.input_params.update(parameter)
         
-        self.init_params = self.input_params
-        
         # initialize saving procedure
-        self.data_path = self.init_params.pop["input_params"]["data_path"]
-        self.data_name = self.init_params.pop["input_params"]["file_name"] + "_"
-        override = self.init_params.pop["input_params"]["override"]
+        self.data_path = data_path
+        self.data_name = file_name
         if not os.path.exists(self.data_path):
             os.mkdir(self.data_path)
         # check if some files may already exist
+        if debug: print(self.data_path,self.data_name + "*",len(fnmatch.filter(os.listdir(self.data_path), self.data_name + "*")))
         self.run_counter = 0 if override else len(fnmatch.filter(os.listdir(self.data_path), self.data_name + "*"))
         # save the initial configuration?
         # self.standard_config = self.input_params.copy() 
         
+        self.init_params = self.input_params
+        
+        
+        
+        
     def kwargs_update(self, kargs):
         '''Update the parameter config given kargs'''
-        self.input_params.update(kargs)
+        self.init_params.update(kargs)
         
     def kwargs_revert(self):
         '''Revert changes in the parameters'''
@@ -93,13 +97,19 @@ class Parameters():
     
 class Simulation(Parameters):
     '''Dynamically execute and plot simulations.'''
-    def __init__(self, parameter_path="./", save_inclass = False, save_ondisk = True, write_cache=False, debug=False):
+    def __init__(self, parameter_path="./", save_inclass = False, save_ondisk = True, 
+                write_cache=False, data_path = "./data/", file_name = "run_", override = False, 
+                 debug=False):
         '''parameter_file (str): path to parameter.yaml
         save_inclass (bool): If set true, results are saved as a list in the class, very useful for testing and quick analysis. If False, results are saved as a file
         save_ondisk (bool): If set True, save results on disk
         write_cache (bool): If true, use the included 21cmfast cache, useful when doing repeated simulations with same seed and init conditions.
+        data_path (str): path for saving the results of save_ondisk is True
+        file_name (str): filename for the runs, final name will be: filename + run_id + .h5
+        override (bool): If True, old runs will be overridden
         debug (bool): Print many things along the way if something is screwed again.'''
-        super().__init__(parameter_path=parameter_path)
+        super().__init__(parameter_path=parameter_path, data_path=data_path, 
+                        file_name=file_name, override=override, debug=debug)
         print(f"Using 21cmFAST version {p21c.__version__}")
         self.sic = save_inclass
         self.sod = save_ondisk
@@ -119,10 +129,11 @@ class Simulation(Parameters):
         self.simtype = 0
         with p21c.global_params.use(**self.global_params):
             self.randomize()
+            self.kwargs_update(kargs)
             run = self.wrap_params(self.input_params)
             if commit: return run
             if self.sic: self.data.append(run)
-            if self.sod: self.run_counter = self.save(run, self.data_name, self.data_path, self.run_counter)
+            if self.sod: self.save(run, self.data_name, self.data_path)
                 
         
     
@@ -132,10 +143,11 @@ class Simulation(Parameters):
         self.simtype = 1
         with p21c.global_params.use(**self.global_params):
             self.randomize()
+            self.kwargs_update(kargs)
             run = p21c.run_lightcone(**self.input_params)
             if commit: return run
             if self.sic: self.data.append(run)
-            if self.sod: self.run_counter = self.save(run, self.data_name, self.data_path, self.run_counter)
+            if self.sod: self.save(run, self.data_name, self.data_path)
             
                 
     def run_multi_lightcone(self, mkargs):
@@ -144,8 +156,23 @@ class Simulation(Parameters):
         for run_params in self.generate_combinations(mkargs):
             print("Parameter run: ",run_params)
             self.run_lightcone(kargs=run_params)
-    
-    
+            
+            
+    def run_samplef(self, nruns, args, samplef = (lambda a,b: np.random.uniform(a,b)), box = False):
+        '''Sample parameters according to some function and run simulations
+        nruns (int): specify the number of runs
+        samplef (func): callable function which takes an array of parameter given in args (standard choice is uniform)
+        args (dict): a dict of parameter (must obey the parameter.yaml structure) with argument arrays as value (standard choice is array [start, end])
+        box (bool): If True, run a box simulation instead instead of the full lightcone'''
+        # multithread loop via Pool? schwimmbad mpi? (GLI a problem??? probably not because it wraps C code)
+        for run in range(nruns):
+            parameter = self.generate_range(args, samplef)
+            if self.debug: print(parameter)
+            if box: self.run_box(kargs=parameter)
+            else: self.run_lightcone(kargs=parameter)
+
+
+
     
     # print functions need to be rewritten in a modular way ... may not working atm
     def plot_global_properties(self, run=[-1], observational_axis = False, print_params = ['']):
@@ -286,11 +313,20 @@ class Simulation(Parameters):
         for combination in itertools.product(*values):
             yield dict(zip(keys, combination))
         return self.generate_combinations(d)
+    
+    def generate_range(self, nested_dict, func):
+        '''Helper function which updates every values in a nested dict such that the values [a,b] -> func(*[a,b])'''
+        res = {} 
+        for key, value in nested_dict.items(): 
+            if isinstance(value, dict): 
+                res[key] = self.generate_range(value, func) 
+            else: 
+                res[key] = func(*value)
+        return res
 
-    @staticmethod
-    def save(obj, fname, direc, counter):
-        obj.save(fname=fname+str(counter), direc=direc)
-        return counter + 1
+    def save(self, obj, fname, direc):
+        self.run_counter += 1
+        obj.save(fname=fname+str(self.run_counter-1), direc=direc)
     
 
 """

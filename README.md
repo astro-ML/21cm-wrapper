@@ -1,4 +1,4 @@
-p21cmfast wrapper v0.2
+p21cmfast wrapper v0.3
 
 Quickstart:
 1) Install the requirements (pip install -r requirements.txt)
@@ -18,9 +18,14 @@ Addendum:
 There are two classes: Parameters (which handles everything related to the parameters) and Simulation (which handles p21cmfast and the visualization).
 Simulation inherits Parameters, so there is no need to work with the Parameters class at all.
 
+To-do (Priority):
+- [x] implement (uniform / distribution function) sampling of parameters, run sims, and save them
+
 To-do:
+- [ ] true multiprocessing of py21cmfast (GIL a problem??)
 - [x] add saving method (!)
 - [ ] make ps using custom z-bins
 - [ ] show progress bars
 - [ ] more cleanup, especially the plotting routines
 - [ ] make a compare method (like ps) for global_props plot 
+
