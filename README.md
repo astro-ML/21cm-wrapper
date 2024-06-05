@@ -22,7 +22,7 @@ To-do (Priority):
 - [x] implement (uniform / distribution function) sampling of parameters, run sims, and save them
 
 To-do:
-- [ ] true multiprocessing of py21cmfast (GIL a problem??)
+- [x] true multiprocessing of py21cmfast (GIL a problem??)
 - [x] add saving method (!)
 - [ ] make ps using custom z-bins
 - [ ] show progress bars
