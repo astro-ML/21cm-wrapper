@@ -132,7 +132,6 @@ class Simulation(Parameters):
             if self.sic: self.data.append(run)
             if self.sod: self.save(run, self.data_name, self.data_path, run_id)
                 
-        
     
     def run_lightcone(self, kargs={}, run_id=0, commit = False):
         '''Run a simple lightcone simulation'''
