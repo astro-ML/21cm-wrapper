@@ -48,16 +48,17 @@ class mcmc_aies(Simulation):
         return - np.inf
     '''
     
-    
-
-    @staticmethod
-    def log_probability(theta, ):
-        print("init params = ", theta)
+    def p_wrapper(self, theta, fid_ps, mc_parameter):
+        # 21cmfast doesn't run outside of this ranges, implement generic hard-limit check in the future
         if (theta[1] < 100) | (theta[1] > 2000):
             return - np.inf 
-        params = {"astro_params": {"HII_EFF_FACTOR": theta[0], "NU_X_THRESH": theta[1], "ION_Tvir_MIN": theta[2]}}
-        obs_box = self.run_box(kargs=params, nosave=True, cache=False)[0].brightness_temp
-        obs_box_ps = self.compute_step_ps(obs_box, plot=False)[0]
+        run_params = self.fill_dict(mc_parameter, theta)
+        test_cone = self.run_lightcone(kargs=run_params, commit=True)
+        test_ps = self.compute_ps(test_cone, self.z_bins, self.k_bins)
+        
+
+    @staticmethod
+    def log_probability(theta, lp, llh):
         prob = self.log_prior(theta) + self.log_likelihood(theta, obs_box_ps, y)
         print("log_prob = ", prob)
         return prob
