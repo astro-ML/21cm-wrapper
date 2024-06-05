@@ -4,12 +4,9 @@ input_params:
     - brightness_temp
     #- xH_box
     #- density
-  redshift: 10
+  redshift: 5.5
   max_redshift: 35
   random_seed: 42
-  override: false # if true, override existing runs, if false, continue where it stopped
-  data_path: "./data" # path for the output
-  file_name: "run" # the output will have the format: {file_name} + "_{run}.h5"
 
 astro_params:
   ### primary variables to change ###
@@ -82,7 +79,7 @@ user_params:
   # use default parameters for this section
   use_default: false
   # Length of the box, in Mpc. Default 300 Mpc.
-  BOX_LEN: 150
+  BOX_LEN: 220
   # Number of cells for the low-res box. Default 200.
   HII_DIM: 100
   # Number of cells for the high-res box (sampling ICs) along a principal axis. To avoid sampling issues, DIM should be at least 3 or 4 times HII_DIM, and an integer multiple. By default, it is set to 3*HII_DIM.
@@ -96,7 +93,7 @@ user_params:
   # Factor which allows the creation of non-cubic boxes. It will shorten/lengthen the line of sight dimension of all boxes. NON_CUBIC_FACTOR * DIM/HII_DIM must result in an integer
   NON_CUBIC_FACTOR: 1.0
   # Ability to turn off random number generation for initial conditions. Can be useful for debugging and adding in new features, if false the random_seed parameter will be ignored and a new seed will be sampled from [0,99999] every run
-  NO_RNG: false
+  NO_RNG: true
   # Sets the number of processors (threads) to be used for performing 21cmFAST. Default 1.
   N_THREADS: 6
   # Whether to perform the Zel’Dovich or 2LPT perturbation on the low or high resolution grid.
