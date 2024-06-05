@@ -68,8 +68,8 @@ class Parameters():
         self.run_counter = 0 if override else len(fnmatch.filter(os.listdir(self.data_path), self.data_name + "*"))
         self.override = override
         
-        # save the initial configuration?
-        # self.standard_config = self.input_params.copy() 
+        # save the initial configuration
+        self.init_params = self.input_params.copy() 
 
     def kwargs_update(self, kargs):
         '''Update the parameter config given kargs'''
