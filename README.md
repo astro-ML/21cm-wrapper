@@ -1,4 +1,5 @@
 p21cmfast wrapper v0.3
+testing branch for affine invariant ensemble mcmc implementation
 
 Quickstart:
 1) Install the requirements (pip install -r requirements.txt)
