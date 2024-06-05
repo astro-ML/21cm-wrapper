@@ -95,9 +95,7 @@ class Parameters():
     def randomize(self):
         '''Shuffle random_seed'''
         if self.random_seed: self.input_params["random_seed"] = random.randint(0,99999)
-                
-            
-        
+       
     
 class Simulation(Parameters):
     '''Dynamically execute and plot simulations.'''
@@ -137,7 +135,7 @@ class Simulation(Parameters):
             run = self.wrap_params(self.input_params)
             if commit: return run
             if self.sic: self.data.append(run)
-            if self.sod: self.save(run, self.data_name, self.data_path, run_id, self.override)
+            if self.sod: self.save(run, self.data_name, self.data_path, run_id)
                 
         
     
@@ -151,7 +149,7 @@ class Simulation(Parameters):
             run = p21c.run_lightcone(**self.input_params)
             if commit: return run
             if self.sic: self.data.append(run)
-            if self.sod: self.save(run, self.data_name, self.data_path, run_id, self.override)
+            if self.sod: self.save(run, self.data_name, self.data_path, run_id)
             
                 
     def run_multi_lightcone(self, mkargs):
@@ -183,16 +181,6 @@ class Simulation(Parameters):
         schwimmhalle = MPIPool() if mpi else Pool(threads)
         with schwimmhalle as p:
             p.map(self.mpi_box_wrapper if box else self.mpi_lcone_wrapper, m_params)
-        
-        '''
-        for run in range(nruns):
-            parameter = self.generate_range(args, samplef)
-            if self.debug: print(parameter)
-            if box: self.run_box(kargs=parameter)
-            else: self.run_lightcone(kargs=parameter)
-        '''
-
-
 
     
     # print functions need to be rewritten in a modular way ... may not working atm
@@ -346,7 +334,7 @@ class Simulation(Parameters):
         return res
     
     @staticmethod
-    def save(obj, fname, direc, run_id, mpi):
+    def save(obj, fname, direc, run_id):
         obj.save(fname=fname+str(run_id), direc=direc)
     
 
