@@ -6,13 +6,14 @@ import logging, sys, os
 #logger.setLevel(logging.INFO)
 from py21cmfast import plotting
 from py21cmfast import cache_tools
-#from multiprocessing import Pool
+from multiprocessing import Pool
 #import timeit
 import numpy as np
 import random
 import yaml
 import itertools
 from powerbox.tools import get_power
+from schwimmbad import MPIPool
 #import pickle
 import fnmatch
 
@@ -62,8 +63,11 @@ class Parameters():
         if not os.path.exists(self.data_path):
             os.mkdir(self.data_path)
         # check if some files may already exist
-        if debug: print(self.data_path,self.data_name + "*",len(fnmatch.filter(os.listdir(self.data_path), self.data_name + "*")))
+        if override: os.system(f'rm -f {self.data_path + self.data_name + "*"}')
+        if debug: print(self.data_path,self.data_name + "*",len(fnmatch.filter(os.listdir(self.data_path), self.data_name + "*")), fnmatch.filter(os.listdir(self.data_path), self.data_name + "*"))
         self.run_counter = 0 if override else len(fnmatch.filter(os.listdir(self.data_path), self.data_name + "*"))
+        self.override = override
+        
         # save the initial configuration?
         # self.standard_config = self.input_params.copy() 
         
@@ -86,7 +90,7 @@ class Parameters():
         This is necessary or else 21cmfast returns an error.'''
         params.pop("lightcone_quantities")
         params.pop("max_redshift")
-        return p21c.run_coeval(**params)[0]
+        return p21c.run_coeval(**params)
             
     def randomize(self):
         '''Shuffle random_seed'''
@@ -121,7 +125,7 @@ class Simulation(Parameters):
         '''Returns length of the data-array'''
         return len(self.data)
         
-    def run_box(self, kargs={}, commit=False):
+    def run_box(self, kargs={}, run_id=0, commit=False):
         '''Run a simple box simulation
         kargs (dict): Change parameters on-the-fly for this run
         commit (bool): If true, results are returned'''
@@ -133,11 +137,11 @@ class Simulation(Parameters):
             run = self.wrap_params(self.input_params)
             if commit: return run
             if self.sic: self.data.append(run)
-            if self.sod: self.save(run, self.data_name, self.data_path)
+            if self.sod: self.save(run, self.data_name, self.data_path, run_id, self.override)
                 
         
     
-    def run_lightcone(self, kargs={}, commit = False):
+    def run_lightcone(self, kargs={}, run_id=0, commit = False):
         '''Run a simple lightcone simulation'''
         # depricated, but plotting still depends on it
         self.simtype = 1
@@ -147,7 +151,7 @@ class Simulation(Parameters):
             run = p21c.run_lightcone(**self.input_params)
             if commit: return run
             if self.sic: self.data.append(run)
-            if self.sod: self.save(run, self.data_name, self.data_path)
+            if self.sod: self.save(run, self.data_name, self.data_path, run_id, self.override)
             
                 
     def run_multi_lightcone(self, mkargs):
@@ -156,20 +160,37 @@ class Simulation(Parameters):
         for run_params in self.generate_combinations(mkargs):
             print("Parameter run: ",run_params)
             self.run_lightcone(kargs=run_params)
-            
-            
-    def run_samplef(self, nruns, args, samplef = (lambda a,b: np.random.uniform(a,b)), box = False):
+    
+    def mpi_lcone_wrapper(self,args):
+        return self.run_lightcone(*args)
+    
+    def mpi_box_wrapper(self, args):
+        return self.run_box(*args)
+   
+    def run_samplef(self, nruns, args, samplef = (lambda a,b: np.random.uniform(a,b)), box = False, threads = 1, mpi=False):
         '''Sample parameters according to some function and run simulations
         nruns (int): specify the number of runs
         samplef (func): callable function which takes an array of parameter given in args (standard choice is uniform)
         args (dict): a dict of parameter (must obey the parameter.yaml structure) with argument arrays as value (standard choice is array [start, end])
-        box (bool): If True, run a box simulation instead instead of the full lightcone'''
-        # multithread loop via Pool? schwimmbad mpi? (GLI a problem??? probably not because it wraps C code)
+        box (bool): If True, run a box simulation instead instead of the full lightcone
+        threads (int): number of parralel running threads
+        mpi (bool): uses MPI instead of pythons Pool -> use False if single CPU, True if multiple hardware CPU'''
+        # multithread loop via Pool? -> Pool seems to work :) (schwimmbad mpi? (GLI a problem??? probably not because it wraps C code))
+        m_params = []
+        for run in range(nruns):
+            m_params.append((self.generate_range(args, samplef), self.run_counter + run))
+            if self.debug: print(m_params[-1])
+        schwimmhalle = MPIPool() if mpi else Pool(threads)
+        with schwimmhalle as p:
+            p.map(self.mpi_box_wrapper if box else self.mpi_lcone_wrapper, m_params)
+        
+        '''
         for run in range(nruns):
             parameter = self.generate_range(args, samplef)
             if self.debug: print(parameter)
             if box: self.run_box(kargs=parameter)
             else: self.run_lightcone(kargs=parameter)
+        '''
 
 
 
@@ -323,10 +344,10 @@ class Simulation(Parameters):
             else: 
                 res[key] = func(*value)
         return res
-
-    def save(self, obj, fname, direc):
-        self.run_counter += 1
-        obj.save(fname=fname+str(self.run_counter-1), direc=direc)
+    
+    @staticmethod
+    def save(obj, fname, direc, run_id, mpi):
+        obj.save(fname=fname+str(run_id), direc=direc)
     
 
 """
