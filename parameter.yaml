@@ -7,10 +7,7 @@ input_params:
   redshift: 10
   max_redshift: 35
   random_seed: 42
-  override: false # if true, override existing runs, if false, continue where it stopped
-  data_path: "./data" # path for the output
-  file_name: "run" # the output will have the format: {file_name} + "_{run}.h5"
-
+  
 astro_params:
   ### primary variables to change ###
   ## https://21cmfast.readthedocs.io/en/latest/reference/_autosummary/inputs/py21cmfast.inputs.AstroParams.html ##
