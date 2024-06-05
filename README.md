@@ -13,7 +13,7 @@ Philosphy:
 - Optionality: All functions have set default arguments to simplify execution but also allow for
 lower level calls
 - Flexibility: The classes are written to work with them in a .ipynb notebook
-
+- Modularity: The functions are fully modular, allowing for quickly implement new features based on existing ones.
 Addendum:
 
 There are two classes: Parameters (which handles everything related to the parameters) and Simulation (which handles p21cmfast and the visualization).
