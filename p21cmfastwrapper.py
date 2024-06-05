@@ -14,7 +14,7 @@ import yaml
 import itertools
 from powerbox.tools import get_power
 from schwimmbad import MPIPool
-#import pickle
+import h5py
 import fnmatch
 
 # set your cache path here
@@ -70,19 +70,14 @@ class Parameters():
         
         # save the initial configuration?
         # self.standard_config = self.input_params.copy() 
-        
-        self.init_params = self.input_params
-        
-        
-        
-        
+
     def kwargs_update(self, kargs):
         '''Update the parameter config given kargs'''
-        self.init_params.update(kargs)
+        self.input_params.update(kargs)
         
     def kwargs_revert(self):
         '''Revert changes in the parameters'''
-        self.init_params = self.init_params
+        self.input_params = self.init_params
     
     @staticmethod
     def wrap_params(params):
@@ -333,9 +328,26 @@ class Simulation(Parameters):
                 res[key] = func(*value)
         return res
     
+    def fill_dict(self, nested_dict, array, index=0):
+        '''Helper function to recursively fill a dict given an array'''
+        for key in nested_dict:
+            if isinstance(nested_dict[key], dict):
+                index = self.fill_dict(nested_dict[key], array, index)
+            else:
+                if index < len(array):
+                    nested_dict[key] = array[index]
+                    index += 1
+                else:
+                    break
+        return nested_dict
+    
     @staticmethod
     def save(obj, fname, direc, run_id):
         obj.save(fname=fname+str(run_id), direc=direc)
+    
+    @staticmethod
+    def load(path_to_obj):
+        return h5py.File(path_to_obj)
     
 
 """
