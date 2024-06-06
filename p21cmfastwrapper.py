@@ -16,6 +16,7 @@ from powerbox.tools import get_power
 from schwimmbad import MPIPool
 import h5py
 import fnmatch
+from collections.abc import Callable
 
 # set your cache path here
 cache_path = "./_cache"
@@ -68,8 +69,8 @@ class Parameters():
         self.run_counter = 0 if override else len(fnmatch.filter(os.listdir(self.data_path), self.data_name + "*"))
         self.override = override
         
-        # save the initial configuration?
-        # self.standard_config = self.input_params.copy() 
+        # save the initial configuration
+        self.init_params = self.input_params.copy() 
 
     def kwargs_update(self, kargs):
         '''Update the parameter config given kargs'''
@@ -132,7 +133,6 @@ class Simulation(Parameters):
             if self.sic: self.data.append(run)
             if self.sod: self.save(run, self.data_name, self.data_path, run_id)
                 
-        
     
     def run_lightcone(self, kargs={}, run_id=0, commit = False):
         '''Run a simple lightcone simulation'''
@@ -341,6 +341,22 @@ class Simulation(Parameters):
                     break
         return nested_dict
     
+    def num_elements(self, x):
+        if isinstance(x, dict):
+            return sum([self.num_elements(_x) for _x in x.values()])
+        else: return 1
+        
+    def extract_values(self, nested_dict):
+        values = []
+        for key in nested_dict:
+            if isinstance(nested_dict[key], dict):
+                values.extend(self.extract_values(nested_dict[key]))
+            else:
+                values.append(nested_dict[key])
+        return values
+            
+    
+            
     @staticmethod
     def save(obj, fname, direc, run_id):
         obj.save(fname=fname+str(run_id), direc=direc)
