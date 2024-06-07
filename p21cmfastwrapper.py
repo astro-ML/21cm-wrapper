@@ -342,11 +342,13 @@ class Simulation(Parameters):
         return nested_dict
     
     def num_elements(self, x):
+        '''Helper function to recursively count the elements in a nested dict'''
         if isinstance(x, dict):
             return sum([self.num_elements(_x) for _x in x.values()])
         else: return 1
         
     def extract_values(self, nested_dict):
+        '''Helper function to recursively extract all values from a nested dict'''
         values = []
         for key in nested_dict:
             if isinstance(nested_dict[key], dict):
@@ -354,6 +356,15 @@ class Simulation(Parameters):
             else:
                 values.append(nested_dict[key])
         return values
+    
+    def extract_keys(self, nested_dict):
+        '''Helper function to recursively extract all keys from a nested dict'''
+        keys = []
+        for key in nested_dict:
+            keys.append(key)
+            if isinstance(nested_dict[key], dict):
+                keys.extend(self.extract_keys(nested_dict[key]))
+        return keys
             
     
             

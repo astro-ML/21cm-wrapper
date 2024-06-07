@@ -9,7 +9,7 @@ set_start_method("fork")
       
 
 class mcmc(Simulation):
-    def __init__(self, log_likelihood, prior, k_bins = np.linspace(1e-1, 1, 10), z_bins = 10, nwalker = 16, steps = 5000, 
+    def __init__(self, log_likelihood, prior, k_bins = np.linspace(2e-2, 3, 30), z_bins = 10, nwalker = 16, steps = 5000, 
                  debug = False):
         super().__init__(save_inclass=False, save_ondisk = False, write_cache=False)
         self.k_bins = k_bins
@@ -47,15 +47,16 @@ class mcmc(Simulation):
             ps[bin,0,:] *= ps[bin,1,:]**3/(2* np.pi**2)
         return ps
     
-    def p_wrapper(self, theta, mc_parameter):
+    def p_wrapper(self, theta, mc_parameter = None):
+        mc_parameter = self.mc_params if mc_parameter is None else mc_parameter
         # 21cmfast doesn't run outside of this ranges, implement generic hard-limit check in the future
         if (theta[3] < 100) | (theta[3] > 2000):
             return - np.inf 
         run_params = self.fill_dict(mc_parameter, theta)
         test_cone = self.run_lightcone(kargs=run_params, commit=True)
         test_ps = self.compute_ps(test_cone)
-        lprob = self.log_probability(test_ps[:,0,:], self.fid_ps[:,0,:], theta)
-        if self.debug: print(lprob)
+        lprob = self.llh(test_ps[:,0,:], self.fid_ps[:,0,:]) if self.ns else self.log_probability(test_ps[:,0,:], self.fid_ps[:,0,:], theta)
+        if self.debug: print(f"{lprob=}")
         return lprob
         
     def log_probability(self, tps, fps, theta):
@@ -65,6 +66,7 @@ class mcmc(Simulation):
     def run_aies(self, init_params_ranges,
             fname: str = "./aies_chain.h5"):
         '''init_params_ranges: Sets the parameter ranges for initializing the walkers'''
+        self.ns = False
         if init_params_ranges == None:
             # continue saved run
             print("Not implemented :(")
@@ -76,3 +78,20 @@ class mcmc(Simulation):
         with Pool(int(self.nwalkers/2)) as pool:
             sampler = emcee.EnsembleSampler(self.nwalkers, self.ndim, self.p_wrapper, pool=pool, args=([init_params_ranges]), backend=backend)
             sampler.run_mcmc(init, self.nsteps, progress=True)
+            
+    def run_ns(self, mc_params, name: str = "./ns_chain-"):
+        self.ns = True
+        self.mc_params = mc_params
+        parameters = self.extract_keys(self.mc_params)
+        ndim = self.num_elements(mc_params)
+        result = solve(LogLikelihood=self.p_wrapper, Prior=self.prior,
+                    n_dims=ndim, outputfiles_basename=name, verbose=True)
+        if self.debug:
+            print()
+            print('evidence: %(logZ).1f +- %(logZerr).1f' % result)
+            print()
+            print('parameter values:')
+            for name, col in zip(parameters, result['samples'].transpose()):
+                print('%15s : %.3f +- %.3f' % (name, col.mean(), col.std()))
+            with open('%sparams.json' % name, 'w') as f:
+                json.dump(parameters, f, indent=2)
