@@ -1,4 +1,4 @@
-py21cmfast=3.3.1
+py21cmfast==3.3.1
 matplotlib
 numpy
 yaml
