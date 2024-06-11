@@ -52,8 +52,6 @@ class mcmc(Simulation):
             ignore_zero_mode=True, get_variance=False, bins=self.k_bins, vol_normalised_power=True)
             ps[bin,0,:] *= ps[bin,1,:]**3/(2* np.pi**2)
             if self.debug: print(f"{bin=}: ", f"{ps[bin,:,:]}")
-            plt.loglog(ps[bin,1,:], ps[bin,0,:])
-            plt.show()
         return ps
     
     def p_wrapper(self, theta, mc_parameter = None):
