@@ -169,4 +169,6 @@ To-do:
 - [ ] make ps using custom z-bins
 - [ ] show progress bars
 - [ ] more cleanup, especially the plotting routines
-- [ ] make a compare method (like ps) for global_props plot
+- [ ] make a compare method (like ps) for global_props plot 
+
+

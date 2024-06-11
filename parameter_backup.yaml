@@ -103,9 +103,9 @@ user_params:
   # Whether to use second-order Lagrangian perturbation theory (2LPT). Set this to True if the density field or the halo positions are extrapolated to low redshifts. The current implementation is very naive and adds a factor ~6 to the memory requirements. Reference: Scoccimarro R., 1998, MNRAS, 299, 1097-1118 Appendix D.
   USE_2LPT: true
   # Whether or not to use stored FFTW_WISDOMs for improving performance of FFTs
-  USE_FFTW_WISDOM: true
+  USE_FFTW_WISDOM: false
   # If True, calculates and evaluates quantites using interpolation tables, which is considerably faster than when performing integrals explicitly.
-  USE_INTERPOLATION_TABLES: true
+  USE_INTERPOLATION_TABLES: false
   # Flag to decide whether to use relative velocities. If True, POWER_SPECTRUM is automatically set to 5. Default False.
   USE_RELATIVE_VELOCITIES: false
 

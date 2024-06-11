@@ -4,3 +4,6 @@ numpy
 pyyaml
 powerbox
 schwimmbad
+emcee 
+pymultinest
+mpi4py

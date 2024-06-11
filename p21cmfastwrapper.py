@@ -16,6 +16,7 @@ from powerbox.tools import get_power
 from schwimmbad import MPIPool
 import h5py
 import fnmatch
+from collections.abc import Callable
 
 # set your cache path here
 cache_path = "./_cache"
@@ -42,7 +43,7 @@ class Parameters():
             if key == "input_params":
                 self.input_params = parameter["input_params"]
             else:
-                print(f"use {key} default config: {parameter[key]["use_default"]}")
+                print(f"""use {key} default config: {parameter[key]["use_default"]}""")
                 use_default.append(parameter[key]["use_default"])
                 parameter[key].pop("use_default")
         
@@ -95,12 +96,13 @@ class Parameters():
 class Simulation(Parameters):
     '''Dynamically execute and plot simulations.'''
     def __init__(self, parameter_path="./", save_inclass = False, save_ondisk = True, 
-                write_cache=False, data_path = "./data/", file_name = "run_", override = False, 
+                write_cache=False, clean_cache=False, data_path = "./data/", file_name = "run_", override = False, 
                  debug=False):
         '''parameter_file (str): path to parameter.yaml
         save_inclass (bool): If set true, results are saved as a list in the class, very useful for testing and quick analysis. If False, results are saved as a file
         save_ondisk (bool): If set True, save results on disk
-        write_cache (bool): If true, use the included 21cmfast cache, useful when doing repeated simulations with same seed and init conditions.
+        write_cache (bool): If true, use the included 21cmfast cache, usually brings performance improvements on lightcone simulations
+        clean_cache (bool): If true, clean the cache after each simulation )
         data_path (str): path for saving the results of save_ondisk is True
         file_name (str): filename for the runs, final name will be: filename + run_id + .h5
         override (bool): If True, old runs will be overridden
@@ -110,6 +112,7 @@ class Simulation(Parameters):
         print(f"Using 21cmFAST version {p21c.__version__}")
         self.sic = save_inclass
         self.sod = save_ondisk
+        self.ccache = clean_cache
         self.debug = debug
         if save_inclass: self.data = []
         self.input_params['write'] = write_cache
@@ -128,6 +131,7 @@ class Simulation(Parameters):
             self.randomize()
             self.kwargs_update(kargs)
             run = self.wrap_params(self.input_params)
+            if self.ccache: cache_tools.clear_cache()
             if commit: return run
             if self.sic: self.data.append(run)
             if self.sod: self.save(run, self.data_name, self.data_path, run_id)
@@ -141,6 +145,7 @@ class Simulation(Parameters):
             self.randomize()
             self.kwargs_update(kargs)
             run = p21c.run_lightcone(**self.input_params)
+            if self.ccache: cache_tools.clear_cache()
             if commit: return run
             if self.sic: self.data.append(run)
             if self.sod: self.save(run, self.data_name, self.data_path, run_id)
@@ -152,6 +157,7 @@ class Simulation(Parameters):
         for run_params in self.generate_combinations(mkargs):
             print("Parameter run: ",run_params)
             self.run_lightcone(kargs=run_params)
+            if self.ccache: cache_tools.clear_cache()
     
     def mpi_lcone_wrapper(self,args):
         return self.run_lightcone(*args)
@@ -340,6 +346,33 @@ class Simulation(Parameters):
                     break
         return nested_dict
     
+    def num_elements(self, x):
+        '''Helper function to recursively count the elements in a nested dict'''
+        if isinstance(x, dict):
+            return sum([self.num_elements(_x) for _x in x.values()])
+        else: return 1
+        
+    def extract_values(self, nested_dict):
+        '''Helper function to recursively extract all values from a nested dict'''
+        values = []
+        for key in nested_dict:
+            if isinstance(nested_dict[key], dict):
+                values.extend(self.extract_values(nested_dict[key]))
+            else:
+                values.append(nested_dict[key])
+        return values
+    
+    def extract_keys(self, nested_dict):
+        '''Helper function to recursively extract all keys from a nested dict'''
+        keys = []
+        for key in nested_dict:
+            keys.append(key)
+            if isinstance(nested_dict[key], dict):
+                keys.extend(self.extract_keys(nested_dict[key]))
+        return keys
+            
+    
+            
     @staticmethod
     def save(obj, fname, direc, run_id):
         obj.save(fname=fname+str(run_id), direc=direc)
