@@ -29,13 +29,13 @@ user_params:
   # Length of the box, in Mpc. Default 300 Mpc.
   BOX_LEN: 200
   # Number of cells for the low-res box. Default 200.
-  HII_DIM: 120
+  HII_DIM: 70
   # Whether to perform the Zel’Dovich or 2LPT perturbation on the low or high resolution grid.
   PERTURB_ON_HIGH_RES: true
   # If True, calculates and evaluates quantites using interpolation tables, which is considerably faster than when performing integrals explicitly.
   USE_INTERPOLATION_TABLES: false
   NO_RNG: false
-  N_THREADS: 6
+  N_THREADS: 12
 
 flag_options:
   ### additional features which can be activated / deactivated if required ###

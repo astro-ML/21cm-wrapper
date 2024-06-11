@@ -1,5 +1,4 @@
-p21cmfast wrapper v0.4
-Now with MCMC capabilities! 
+p21cmfast wrapper v0.4 
 
 <b>Quickstart</b> <br/>
 (* - required for cluster deployment):<br/> <br/>

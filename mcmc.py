@@ -5,13 +5,14 @@ import json
 os.environ["OMP_NUM_THREADS"] = "1"
 from multiprocessing import set_start_method
 set_start_method("fork")
+from schwimmbad import MPIPool
 
       
 
 class mcmc(Simulation):
     def __init__(self, log_likelihood, prior, k_bins = np.linspace(2e-2, 3, 30), z_bins = 10, nwalker = 16, steps = 5000, 
                  debug = False):
-        super().__init__(save_inclass=False, save_ondisk = False, write_cache=False)
+        super().__init__(save_inclass=False, save_ondisk = False, write_cache=True, clean_cache=True)
         self.k_bins = k_bins
         self.z_bins = z_bins
         self.nwalkers = nwalker
@@ -45,26 +46,33 @@ class mcmc(Simulation):
             boxlength=(*data.lightcone_dimensions[:2], physical_size), bin_ave=True, 
             ignore_zero_mode=True, get_variance=False, bins=self.k_bins, vol_normalised_power=True)
             ps[bin,0,:] *= ps[bin,1,:]**3/(2* np.pi**2)
+            if self.debug: print(f"{bin=}: ", f"{ps[bin,:,:]}")
         return ps
     
     def p_wrapper(self, theta, mc_parameter = None):
+        if  self.debug: print()
         mc_parameter = self.mc_params if mc_parameter is None else mc_parameter
         # 21cmfast doesn't run outside of this ranges, implement generic hard-limit check in the future
         if (theta[3] < 100) | (theta[3] > 2000):
+            if self.debug: print(f"{theta[3]=} out of range, return -inf")
             return - np.inf 
         run_params = self.fill_dict(mc_parameter, theta)
+        if self.debug: print(f"{run_params=}")
         test_cone = self.run_lightcone(kargs=run_params, commit=True)
+        if self.debug: print(f"min/max b_temp: {test_cone.brightness_temp.min()}/", f"{test_cone.brightness_temp.max()}")
         test_ps = self.compute_ps(test_cone)
         lprob = self.llh(test_ps[:,0,:], self.fid_ps[:,0,:]) if self.ns else self.log_probability(test_ps[:,0,:], self.fid_ps[:,0,:], theta)
         if self.debug: print(f"{lprob=}")
         return lprob
         
     def log_probability(self, tps, fps, theta):
-        return self.prior(theta) + self.llh(tps, fps)
+        p, l = self.prior(theta), self.llh(tps, fps)
+        if self.debug: print(f"{p=}", "\n", f"{l=}")
+        return p + l
 
     # lambda functions can not be pickled!, rewrite with normal functions, [x] done
     def run_aies(self, init_params_ranges,
-            fname: str = "./aies_chain.h5"):
+            fname: str = "./aies_chain.h5", mpi = False):
         '''init_params_ranges: Sets the parameter ranges for initializing the walkers'''
         self.ns = False
         if init_params_ranges == None:
@@ -75,7 +83,8 @@ class mcmc(Simulation):
         init = self.initialize_params(init_params_ranges)
         if self.debug: print(init)
         backend = emcee.backends.HDFBackend(fname)
-        with Pool(int(self.nwalkers/2)) as pool:
+        schwimmhalle = MPIPool() if mpi else Pool(int(self.nwalkers/2))
+        with schwimmhalle as pool:
             sampler = emcee.EnsembleSampler(self.nwalkers, self.ndim, self.p_wrapper, pool=pool, args=([init_params_ranges]), backend=backend)
             sampler.run_mcmc(init, self.nsteps, progress=True)
             
