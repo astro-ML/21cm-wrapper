@@ -1,4 +1,4 @@
-p21cmfast wrapper v0.4 
+p21cmfast wrapper v0.41 
 
 <b>Quickstart</b> <br/>
 (* - required for cluster deployment):<br/> <br/>
