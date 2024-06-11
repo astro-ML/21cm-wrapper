@@ -5,7 +5,7 @@ input_params:
     #- xH_box
     #- density
   redshift: 5.5
-  max_redshift: 12
+  max_redshift: 35
   random_seed: 42
   
 astro_params:
@@ -35,8 +35,8 @@ user_params:
   PERTURB_ON_HIGH_RES: true
   # If True, calculates and evaluates quantites using interpolation tables, which is considerably faster than when performing integrals explicitly.
   USE_INTERPOLATION_TABLES: false
-  NO_RNG: true
-  N_THREADS: 16
+  NO_RNG: false
+  N_THREADS: 6
 
 flag_options:
   ### additional features which can be activated / deactivated if required ###
