@@ -43,7 +43,7 @@ class mcmc(Simulation):
 
     def compute_ps(self, data):
         zbins = np.linspace(0,data.lightcone_redshifts.shape[0]-1,self.z_bins).astype(int)
-        ps = np.empty((self.z_bins-1, 2, self.k_bins.shape[0]-1))
+        ps = np.empty((self.z_bins-1, 2, self.k_bins))
         for bin in range(self.z_bins - 1):
             physical_size = data.lightcone_distances[zbins[bin+1]] - data.lightcone_distances[zbins[bin]]
             # get variance=False for now until nice usecase is found
@@ -52,6 +52,8 @@ class mcmc(Simulation):
             ignore_zero_mode=True, get_variance=False, bins=self.k_bins, vol_normalised_power=True)
             ps[bin,0,:] *= ps[bin,1,:]**3/(2* np.pi**2)
             if self.debug: print(f"{bin=}: ", f"{ps[bin,:,:]}")
+            plt.loglog(ps[bin,1,:], ps[bin,0,:])
+            plt.show()
         return ps
     
     def p_wrapper(self, theta, mc_parameter = None):
