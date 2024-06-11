@@ -2,8 +2,8 @@ import py21cmfast as p21c
 from matplotlib import pyplot as plt
 import os 
 import logging, sys, os
-#logger = logging.getLogger('21cmFAST')
-#logger.setLevel(logging.INFO)
+logger = logging.getLogger('21cmFAST')
+logger.setLevel(logging.DEBUG)
 from py21cmfast import plotting
 from py21cmfast import cache_tools
 from multiprocessing import Pool
@@ -37,7 +37,8 @@ class Parameters():
         with open(parameter_path + "parameter.yaml", 'r') as file:
             parameter = yaml.safe_load(file)
         # set default configuration given by parameter file
-        self.random_seed = parameter["user_params"]["NO_RNG"]
+        self.random_seed = not parameter["user_params"]["NO_RNG"]
+        self.max_z = parameter["input_params"]["max_redshift"]
         use_default = []
         for key in parameter.keys():
             if key == "input_params":
@@ -145,6 +146,7 @@ class Simulation(Parameters):
             self.randomize()
             self.kwargs_update(kargs)
             run = p21c.run_lightcone(**self.input_params)
+            run = self.cut_lightcone(run, self.max_z)
             if self.ccache: cache_tools.clear_cache()
             if commit: return run
             if self.sic: self.data.append(run)
@@ -371,7 +373,11 @@ class Simulation(Parameters):
                 keys.extend(self.extract_keys(nested_dict[key]))
         return keys
             
-    
+    @staticmethod
+    def cut_lightcone(cone, z_cut):
+        amidx = np.abs(cone.lightcone_redshifts - z_cut).argmin()
+        cone.brightness_temp = cone.brightness_temp[:,:,-amidx:]
+        return cone
             
     @staticmethod
     def save(obj, fname, direc, run_id):

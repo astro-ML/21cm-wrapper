@@ -10,7 +10,7 @@ from schwimmbad import MPIPool
       
 
 class mcmc(Simulation):
-    def __init__(self, log_likelihood, prior, k_bins = np.linspace(2e-2, 3, 30), z_bins = 10, nwalker = 16, steps = 5000, 
+    def __init__(self, log_likelihood, prior, k_bins = np.linspace(5e-2,1.8, 30), z_bins = 11, nwalker = 16, steps = 5000, 
                  debug = False):
         super().__init__(save_inclass=False, save_ondisk = False, write_cache=True, clean_cache=True)
         self.k_bins = k_bins
@@ -21,13 +21,18 @@ class mcmc(Simulation):
         self.llh = log_likelihood
         self.prior = prior
         
-    def make_fiducial(self, fparams: dict = {}, load: bool = False):   
+    def make_fiducial(self, fparams: dict = {}, load: bool = False, plot=False):   
         if load: 
             self.fid_ps = np.load("./fiducial_ps.npy")
         else:
             fcone = self.run_lightcone(kargs=fparams, commit=True)
             self.fid_ps = self.compute_ps(fcone)
             np.save("./fiducial_ps.npy", self.fid_ps)
+            if plot:
+                print(self.fid_ps.shape)
+                for bin in range(self.z_bins - 1):
+                    plt.plot(self.fid_ps[bin,1,:], self.fid_ps[bin,0,:])
+                    plt.show()
         
     def initialize_params(self, init_params_ranges: dict, samplef: Callable[[float, float], float] = (lambda a,b: np.random.uniform(a,b))):
         '''init_params_ranges: dict of ranges for initializing the walkers'''
@@ -58,7 +63,8 @@ class mcmc(Simulation):
             return - np.inf 
         run_params = self.fill_dict(mc_parameter, theta)
         if self.debug: print(f"{run_params=}")
-        test_cone = self.run_lightcone(kargs=run_params, commit=True)
+        if self.debug: test_cone = self.sanity_check(self.run_lightcone, {"kargs": run_params, "commit": True}, self.cf_nan) 
+        else: test_cone = self.run_lightcone(kargs=run_params, commit=True) 
         if self.debug: print(f"min/max b_temp: {test_cone.brightness_temp.min()}/", f"{test_cone.brightness_temp.max()}")
         test_ps = self.compute_ps(test_cone)
         lprob = self.llh(test_ps[:,0,:], self.fid_ps[:,0,:]) if self.ns else self.log_probability(test_ps[:,0,:], self.fid_ps[:,0,:], theta)
@@ -104,3 +110,13 @@ class mcmc(Simulation):
                 print('%15s : %.3f +- %.3f' % (name, col.mean(), col.std()))
             with open('%sparams.json' % name, 'w') as f:
                 json.dump(parameters, f, indent=2)
+    
+    @staticmethod
+    def sanity_check(runner, kargs, c_nan):
+        not_sane = True
+        while not_sane:
+            data = runner(**kargs)
+            if c_nan: not_sane = np.isnan(data.brightness_temp).any()
+            print(f"{c_nan=}")
+        return data
+            
