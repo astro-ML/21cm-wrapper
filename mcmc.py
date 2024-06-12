@@ -77,7 +77,7 @@ class mcmc(Simulation):
 
     # lambda functions can not be pickled!, rewrite with normal functions, [x] done
     def run_aies(self, init_params_ranges,
-            fname: str = "./aies_chain.h5", mpi = False):
+            fname: str = "./aies_chain.h5", mpi = False, threads = 8):
         '''init_params_ranges: Sets the parameter ranges for initializing the walkers'''
         self.ns = False
         if init_params_ranges == None:
@@ -88,7 +88,7 @@ class mcmc(Simulation):
         init = self.initialize_params(init_params_ranges)
         if self.debug: print(init)
         backend = emcee.backends.HDFBackend(fname)
-        schwimmhalle = MPIPool() if mpi else Pool(int(self.nwalkers/2))
+        schwimmhalle = MPIPool() if mpi else Pool(threads)
         with schwimmhalle as pool:
             sampler = emcee.EnsembleSampler(self.nwalkers, self.ndim, self.p_wrapper, pool=pool, args=([init_params_ranges]), backend=backend)
             sampler.run_mcmc(init, self.nsteps, progress=True)
