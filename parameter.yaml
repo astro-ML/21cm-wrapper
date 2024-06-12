@@ -36,7 +36,7 @@ user_params:
   # If True, calculates and evaluates quantites using interpolation tables, which is considerably faster than when performing integrals explicitly.
   USE_INTERPOLATION_TABLES: false
   NO_RNG: false
-  N_THREADS: 1
+  N_THREADS: 3
 
 flag_options:
   ### additional features which can be activated / deactivated if required ###

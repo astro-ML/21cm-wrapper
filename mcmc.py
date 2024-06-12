@@ -114,7 +114,7 @@ class mcmc(Simulation):
         not_sane = True
         while not_sane:
             data = self.run_lightcone(kargs=params, commit=True)
-            not_sane = np.isnan(data.brightness_temp).sany()
+            not_sane = np.isnan(data.brightness_temp).any()
             print(f"{not_sane=}")
         return data
             
