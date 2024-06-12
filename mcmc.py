@@ -63,8 +63,7 @@ class mcmc(Simulation):
             return - np.inf 
         run_params = self.fill_dict(mc_parameter, theta)
         if self.debug: print(f"{run_params=}")
-        if self.debug: test_cone = self.sanity_check(self.run_lightcone, {"kargs": run_params, "commit": True}) 
-        else: test_cone = self.run_lightcone(kargs=run_params, commit=True) 
+        test_cone = self.sanity_check(run_params) if self.debug else self.run_lightcone(kargs=run_params, commit=True) 
         if self.debug: print(f"min/max b_temp: {test_cone.brightness_temp.min()}/", f"{test_cone.brightness_temp.max()}")
         test_ps = self.compute_ps(test_cone)
         lprob = self.llh(test_ps[:,0,:], self.fid_ps[:,0,:]) if self.ns else self.log_probability(test_ps[:,0,:], self.fid_ps[:,0,:], theta)
@@ -111,11 +110,10 @@ class mcmc(Simulation):
             with open('%sparams.json' % name, 'w') as f:
                 json.dump(parameters, f, indent=2)
     
-    @staticmethod
-    def sanity_check(runner, kargs):
+    def sanity_check(self, params):
         not_sane = True
         while not_sane:
-            data = runner(**kargs)
+            data = self.run_lightcone(kargs=params, commit=True)
             not_sane = np.isnan(data.brightness_temp).sany()
             print(f"{not_sane=}")
         return data
