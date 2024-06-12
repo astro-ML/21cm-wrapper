@@ -12,7 +12,7 @@ from schwimmbad import MPIPool
 class mcmc(Simulation):
     def __init__(self, log_likelihood, prior, k_bins = np.linspace(5e-2,1.8, 30), z_bins = 11, nwalker = 16, steps = 5000, 
                  debug = False):
-        super().__init__(save_inclass=False, save_ondisk = False, write_cache=True, clean_cache=True)
+        super().__init__(save_inclass=False, save_ondisk = False, write_cache=False, clean_cache=False)
         self.k_bins = k_bins
         self.z_bins = z_bins
         self.nwalkers = nwalker
