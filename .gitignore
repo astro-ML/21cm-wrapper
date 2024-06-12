@@ -7,3 +7,4 @@ __pycache__
 power_spectra_1D.py
 power_spectra_2D.py
 <class 'pathlib.Path'>
+aies_chain.h5
