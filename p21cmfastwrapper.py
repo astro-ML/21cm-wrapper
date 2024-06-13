@@ -145,7 +145,7 @@ class Simulation(Parameters):
         with p21c.global_params.use(**self.global_params):
             #self.randomize()
             self.kwargs_update(kargs)
-            run = p21c.run_cone(**self.input_params)
+            run = p21c.run_lightcone(**self.input_params)
             run = self.cut_lightcone(run, self.max_z)
             if self.ccache: cache_tools.clear_cache()
             if commit: return run
