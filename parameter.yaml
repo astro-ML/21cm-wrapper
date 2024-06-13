@@ -29,7 +29,7 @@ user_params:
   # Length of the box, in Mpc. Default 300 Mpc.
   BOX_LEN: 200
   # Number of cells for the low-res box. Default 200.
-  HII_DIM: 120
+  HII_DIM: 70
   #DIM: 280
   # Whether to perform the Zel’Dovich or 2LPT perturbation on the low or high resolution grid.
   PERTURB_ON_HIGH_RES: true

@@ -129,7 +129,7 @@ class Simulation(Parameters):
         # depricated, but plotting still depends on it
         self.simtype = 0
         with p21c.global_params.use(**self.global_params):
-            self.randomize()
+            #self.randomize()
             self.kwargs_update(kargs)
             run = self.wrap_params(self.input_params)
             if self.ccache: cache_tools.clear_cache()
@@ -138,14 +138,14 @@ class Simulation(Parameters):
             if self.sod: self.save(run, self.data_name, self.data_path, run_id)
                 
     
-    def run_lightcone(self, kargs={}, run_id=0, commit = False):
+    def run_cone(self, kargs={}, run_id=0, commit = False):
         '''Run a simple lightcone simulation'''
         # depricated, but plotting still depends on it
         self.simtype = 1
         with p21c.global_params.use(**self.global_params):
-            self.randomize()
+            #self.randomize()
             self.kwargs_update(kargs)
-            run = p21c.run_lightcone(**self.input_params)
+            run = p21c.run_cone(**self.input_params)
             run = self.cut_lightcone(run, self.max_z)
             if self.ccache: cache_tools.clear_cache()
             if commit: return run
@@ -158,11 +158,11 @@ class Simulation(Parameters):
         e.g. rargs = {"random_seed": [1,2], "astro_params": {"HII_EFF_FACTOR": [29,31]}, NU_X_THRESH": [1,2,3]}, ...}'''
         for run_params in self.generate_combinations(mkargs):
             print("Parameter run: ",run_params)
-            self.run_lightcone(kargs=run_params)
+            self.run_cone(kargs=run_params)
             if self.ccache: cache_tools.clear_cache()
     
     def mpi_lcone_wrapper(self,args):
-        return self.run_lightcone(*args)
+        return self.run_cone(*args)
     
     def mpi_box_wrapper(self, args):
         return self.run_box(*args)

@@ -11,7 +11,7 @@ from schwimmbad import MPIPool
 
 class mcmc(Simulation):
     def __init__(self, log_likelihood, prior, k_bins = np.linspace(5e-2,1.8, 30), z_bins = 11, nwalker = 16, steps = 5000, 
-                 debug = False):
+                 debug = False, nan_fix = True):
         super().__init__(save_inclass=False, save_ondisk = False, write_cache=False, clean_cache=False)
         self.k_bins = k_bins
         self.z_bins = z_bins
@@ -20,12 +20,13 @@ class mcmc(Simulation):
         self.debug = debug
         self.llh = log_likelihood
         self.prior = prior
+        self.nan_fix = nan_fix
         
     def make_fiducial(self, fparams: dict = {}, load: bool = False, plot=False):   
         if load: 
             self.fid_ps = np.load("./fiducial_ps.npy")
         else:
-            fcone = self.run_lightcone(kargs=fparams, commit=True)
+            fcone = self.run_cone(kargs=fparams, commit=True)
             self.fid_ps = self.compute_ps(fcone)
             np.save("./fiducial_ps.npy", self.fid_ps)
             if plot:
@@ -63,7 +64,8 @@ class mcmc(Simulation):
             return - np.inf 
         run_params = self.fill_dict(mc_parameter, theta)
         if self.debug: print(f"{run_params=}")
-        test_cone = self.run_lightcone(kargs=run_params, commit=True) 
+        test_cone = self.run_cone(kargs=run_params, commit=True) 
+        if self.nan_fix: test_cone.brightness_temp = self.nan_adversarial(test_cone.brightness_temp)
         #if np.isnan(test_cone.brightness_temp).any(): return - np.inf
         if self.debug: print(f"min/max b_temp: {test_cone.brightness_temp.min()}/", f"{test_cone.brightness_temp.max()}",f"\n{run_params=}")
         test_ps = self.compute_ps(test_cone)
@@ -114,8 +116,36 @@ class mcmc(Simulation):
     def sanity_check(self, params):
         not_sane = True
         while not_sane:
-            data = self.run_lightcone(kargs=params, commit=True)
+            data = self.run_cone(kargs=params, commit=True)
             not_sane = np.isnan(data.brightness_temp).any()
             print(f"{not_sane=}")
         return data
+    @staticmethod
+    def nan_adversarial(bt_cone):
+        nans = np.isnan(bt_cone)
+        x_dim, y_dim, z_dim = bt_cone.shape
+        if nans.any():
+            nan_idx = np.where(nans==True)
+            for x,y,z in zip(*nan_idx):
+                x_low, x_high = x-1, x+2
+                y_low, y_high = y-1, y+2
+                z_low, z_high = z-1, z+2
+                if x == 0:
+                    x_low += 1
+                if x == x_dim -1:
+                    x_high -= 1
+                if y == 0:
+                    y_low += 1
+                if y == y_dim -1:
+                    y_high -= 1
+                if z == 0:
+                    z_low += 1
+                if z == z_dim -1:
+                    z_high -= 1
+                    
+                region = bt_cone[x_low:x_high, y_low:y_high, z_low:z_high]
+                bt_cone[x,y,z] = np.mean(region[~np.isnan(region)])
+            return bt_cone       
+        else:
+            return bt_cone
             
