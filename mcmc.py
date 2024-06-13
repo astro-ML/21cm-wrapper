@@ -63,11 +63,12 @@ class mcmc(Simulation):
             return - np.inf 
         run_params = self.fill_dict(mc_parameter, theta)
         if self.debug: print(f"{run_params=}")
-        test_cone = self.sanity_check(run_params) if self.debug else self.run_lightcone(kargs=run_params, commit=True) 
-        if self.debug: print(f"min/max b_temp: {test_cone.brightness_temp.min()}/", f"{test_cone.brightness_temp.max()}")
+        test_cone = self.run_lightcone(kargs=run_params, commit=True) 
+        #if np.isnan(test_cone.brightness_temp).any(): return - np.inf
+        if self.debug: print(f"min/max b_temp: {test_cone.brightness_temp.min()}/", f"{test_cone.brightness_temp.max()}",f"\n{run_params=}")
         test_ps = self.compute_ps(test_cone)
         lprob = self.llh(test_ps[:,0,:], self.fid_ps[:,0,:]) if self.ns else self.log_probability(test_ps[:,0,:], self.fid_ps[:,0,:], theta)
-        if self.debug: print(f"{lprob=}")
+        if self.debug: print(f"{lprob=}", f"\n{run_params=}")
         return lprob
         
     def log_probability(self, tps, fps, theta):
