@@ -23,8 +23,8 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
         INHOMO_RECO = True,
         USE_TS_FLUCT = True,
     ),
-    regenerate=False
-) # For other available options, see the docstring.
+    regenerate=False,
+    write=False) # For other available options, see the docstring.
 
 # Now the likelihood...
 datafiles = ["data_emcee/lightcone_mcmc_data_%s.npz"%i for i in range(11)]
