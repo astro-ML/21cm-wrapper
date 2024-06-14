@@ -10,3 +10,10 @@ power_spectra_2D.py
 aies_chain.h5
 p21fastwrapper_debugger.ipynb
 *chain*
+MultiNest
+aies_lil.py
+data_emcee
+mcmc.py
+*.jpg
+*.yml
+data
