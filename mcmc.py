@@ -4,7 +4,7 @@ from pymultinest.solve import solve
 import json
 os.environ["OMP_NUM_THREADS"] = "1"
 from multiprocessing import set_start_method
-set_start_method("fork")
+set_start_method("spawn")
 from schwimmbad import MPIPool
 
       

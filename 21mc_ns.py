@@ -11,15 +11,16 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
     redshift = 5.5,              # Lower redshift of the lightcone
     max_redshift = 12.0,          # Approximate maximum redshift of the lightcone (will be exceeded).
     user_params = dict(
-        HII_DIM = 50,
+        HII_DIM = 70,
         BOX_LEN = 200.0,
         PERTURB_ON_HIGH_RES = True,
         USE_INTERPOLATION_TABLES = False,
-        N_THREADS=2),
+        N_THREADS=1),
     flag_options = dict(
         INHOMO_RECO = True,
         USE_TS_FLUCT = True,
     ),
+    direc="_cache",
     regenerate=False,
     write=False
 ) # For other available options, see the docstring.
@@ -29,8 +30,8 @@ datafiles = ["data/lightcone_mcmc_ns_data_%s.npz"%i for i in range(20)]
 likelihood = p21mc.Likelihood1DPowerLightcone(  # All likelihood modules are prefixed by Likelihood*
     datafile = datafiles,        # All likelihoods have this, which specifies where to write/read data
     logk=False,                 # Should the power spectrum bins be log-spaced?
-    min_k=0.05,                  # Minimum k to use for likelihood
-    max_k=3.0,                  # Maximum ""
+    min_k=0,                  # Minimum k to use for likelihood
+    max_k=3.3,                  # Maximum ""
     nchunks = 11,                 # Number of chunks to break the lightcone into
     simulate=True
 ) # For other available options, see the docstring
@@ -56,8 +57,11 @@ chainLF = mcmc.run_mcmc(
         L_X = [40,38,42,1],
         NU_X_THRESH = [500,100,1200,100]
     ),
-    datadir = '.',
+    datadir = 'data_ns',
+    log_level_stream=logging.DEBUG,
     use_multinest=True,
+    continue_sampling=False,
     **mcmc_options
 )
+
 

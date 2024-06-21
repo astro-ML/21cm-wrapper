@@ -12,8 +12,8 @@ def log_prior(theta):
 def log_likelihood(t,f):
     return - np.sum((t - f)**2/(np.abs(f)+1))
 
-mcrun = mcmc(nwalker=84, z_bins = 21, k_bins=30, 
+mcrun = mcmc(nwalker=8, z_bins = 21, k_bins=30, 
              debug = False, log_likelihood=log_likelihood, prior=log_prior)
 mcrun.make_fiducial(load = True)
 
-mcrun.run_aies(init_params_ranges, mpi=False, threads=28, fname="./aies_chain1.h5")
+mcrun.run_aies(init_params_ranges, mpi=False, threads=4, fname="./aies_chain1.h5")

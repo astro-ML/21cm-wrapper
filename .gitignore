@@ -16,4 +16,4 @@ data_emcee
 mcmc.py
 *.jpg
 *.yml
-data
+*data*
