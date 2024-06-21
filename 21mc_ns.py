@@ -15,7 +15,7 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
         BOX_LEN = 200.0,
         PERTURB_ON_HIGH_RES = True,
         USE_INTERPOLATION_TABLES = False,
-        N_THREADS=1),
+        N_THREADS=2),
     flag_options = dict(
         INHOMO_RECO = True,
         USE_TS_FLUCT = True,
@@ -31,7 +31,7 @@ likelihood = p21mc.Likelihood1DPowerLightcone(  # All likelihood modules are pre
     datafile = datafiles,        # All likelihoods have this, which specifies where to write/read data
     logk=False,                 # Should the power spectrum bins be log-spaced?
     min_k=0,                  # Minimum k to use for likelihood
-    max_k=3.3,                  # Maximum ""
+    max_k=3.4,                  # Maximum ""
     nchunks = 11,                 # Number of chunks to break the lightcone into
     simulate=True
 ) # For other available options, see the docstring
