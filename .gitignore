@@ -17,3 +17,10 @@ mcmc.py
 *.jpg
 *.yml
 *data*
+aies_lil.py
+conversion.py
+nancheck.py
+nantest.py
+ns.py
+sim.py
+testblub.py
