@@ -400,7 +400,6 @@ class Simulation(Parameters):
         len_files = len(files)
         nan_counter = []
         # initalize the progress bar
-        
         for i,file in enumerate(files):
             lcone = p21c.outputs.LightCone.read(path + file)
             # load image
