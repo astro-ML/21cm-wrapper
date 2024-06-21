@@ -9,4 +9,11 @@ power_spectra_2D.py
 <class 'pathlib.Path'>
 aies_chain.h5
 p21fastwrapper_debugger.ipynb
-parameter.yaml
+*chain*
+MultiNest
+aies_lil.py
+data_emcee
+mcmc.py
+*.jpg
+*.yml
+*data*

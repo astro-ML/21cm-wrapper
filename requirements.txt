@@ -7,3 +7,4 @@ schwimmbad
 emcee 
 pymultinest
 mpi4py
+21CMMC
