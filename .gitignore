@@ -18,3 +18,4 @@ mcmc.py
 *.yml
 *data*
 sim.py
+21mc*

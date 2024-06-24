@@ -5,6 +5,7 @@ import numpy as np
 from py21cmmc import analyse
 from py21cmmc import mcmc
 import py21cmmc as p21mc
+from multiprocessing import Pool
 
 
 import logging
@@ -52,10 +53,10 @@ chain = mcmc.run_mcmc(
         L_X = [40,38,42,1],
         NU_X_THRESH = [500,100,1200,100]
     ),
-    walkersRatio=13,         # The number of walkers will be walkersRatio*nparams
+    walkersRatio=3,         # The number of walkers will be walkersRatio*nparams
     burninIterations=0,      # Number of iterations to save as burnin. Recommended to leave as zero.
     sampleIterations=100,    # Number of iterations to sample, per walker.
-    threadCount=26,           # Number of processes to use in MCMC (best as a factor of walkersRatio)
+    pool=Pool(6),           # Number of processes to use in MCMC (best as a factor of walkersRatio)
     log_level_stream=logging.DEBUG,
     log_level_21CMMC=logging.DEBUG,
     continue_sampling=False,  # Whether to contine sampling from previous run *up to* sampleIterations.
