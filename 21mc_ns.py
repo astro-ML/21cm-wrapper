@@ -21,8 +21,11 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
         USE_TS_FLUCT = True,
     ),
     direc="_cache",
-    regenerate=False,
-    write=False
+    regenerate=True,
+    write=False,
+    cache_dir="_cache",
+    cache_ionize=False
+
 ) # For other available options, see the docstring.
 
 # Now the likelihood...
