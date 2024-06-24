@@ -23,6 +23,7 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
         INHOMO_RECO = True,
         USE_TS_FLUCT = True,
     ),
+    cache_ionize=False,
     regenerate=False,
     direc="_cache",
     write=False,) # For other available options, see the docstring.
@@ -35,7 +36,7 @@ likelihood = p21mc.Likelihood1DPowerLightcone(  # All likelihood modules are pre
     min_k=0,                  # Minimum k to use for likelihood
     max_k=3.4,                  # Maximum ""
     nchunks = 11,                 # Number of chunks to break the lightcone into
-    simulate=True,
+    simulate=False,
 ) # For other available options, see the docstring
 
 model_name = "LightconeTest"
@@ -52,7 +53,7 @@ chain = mcmc.run_mcmc(
     ),
     walkersRatio=13,         # The number of walkers will be walkersRatio*nparams
     burninIterations=0,      # Number of iterations to save as burnin. Recommended to leave as zero.
-    sampleIterations=100,    # Number of iterations to sample, per walker.
+    sampleIterations=1000,    # Number of iterations to sample, per walker.
     threadCount=26,           # Number of processes to use in MCMC (best as a factor of walkersRatio)
     log_level_stream=logging.DEBUG,
     log_level_21CMMC=logging.DEBUG,

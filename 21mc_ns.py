@@ -20,6 +20,7 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
         INHOMO_RECO = True,
         USE_TS_FLUCT = True,
     ),
+    cache_ionize=False,
     direc="_cache",
     regenerate=False,
     write=False
@@ -33,7 +34,7 @@ likelihood = p21mc.Likelihood1DPowerLightcone(  # All likelihood modules are pre
     min_k=0,                  # Minimum k to use for likelihood
     max_k=3.3,                  # Maximum ""
     nchunks = 11,                 # Number of chunks to break the lightcone into
-    simulate=True
+    simulate=False
 ) # For other available options, see the docstring
 
 model_name = "LightconeTest"
