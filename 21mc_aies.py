@@ -15,7 +15,7 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
     redshift = 5.5,              # Lower redshift of the lightcone
     max_redshift = 12.0,          # Approximate maximum redshift of the lightcone (will be exceeded).
     user_params = dict(
-        HII_DIM = 70,
+        HII_DIM = 40,
         BOX_LEN = 200.0,
         PERTURB_ON_HIGH_RES = True,
         USE_INTERPOLATION_TABLES = False,
@@ -24,11 +24,11 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
         INHOMO_RECO = True,
         USE_TS_FLUCT = True,
     ),
-    regenerate=True,
+    regenerate=False,
     direc="_cache",
     cache_dir = "_cache",
-    cache_ionize = False,
-    write=False,) # For other available options, see the docstring.
+    cache_mcmc=False,
+    cache_ionize = False) # For other available options, see the docstring.
 
 # Now the likelihood...
 datafiles = ["data_emcee/lightcone_mcmc_data_%s.npz"%i for i in range(11)]
@@ -56,7 +56,7 @@ chain = mcmc.run_mcmc(
     walkersRatio=3,         # The number of walkers will be walkersRatio*nparams
     burninIterations=0,      # Number of iterations to save as burnin. Recommended to leave as zero.
     sampleIterations=100,    # Number of iterations to sample, per walker.
-    pool=Pool(6),           # Number of processes to use in MCMC (best as a factor of walkersRatio)
+    threadCount=3,           # Number of processes to use in MCMC (best as a factor of walkersRatio)
     log_level_stream=logging.DEBUG,
     log_level_21CMMC=logging.DEBUG,
     continue_sampling=False,  # Whether to contine sampling from previous run *up to* sampleIterations.
