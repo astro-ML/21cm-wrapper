@@ -1,4 +1,4 @@
-
+os.environ["OMP_NUM_THREADS"] = "1"
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -15,7 +15,11 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
     redshift = 5.5,              # Lower redshift of the lightcone
     max_redshift = 12.0,          # Approximate maximum redshift of the lightcone (will be exceeded).
     user_params = dict(
+<<<<<<< HEAD
         HII_DIM = 80,
+=======
+        HII_DIM = 90,
+>>>>>>> 6a32569 (random workaround are random)
         BOX_LEN = 200.0,
         PERTURB_ON_HIGH_RES = False,
         USE_INTERPOLATION_TABLES = False,
@@ -28,15 +32,25 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
     direc="_cache",
     cache_dir = "_cache",
     cache_mcmc=False,
+<<<<<<< HEAD
     cache_ionize = False) # For other available options, see the docstring.
+=======
+    cache_ionize = False,
+    write=False,) # For other available options, see the docstring.
+>>>>>>> 6a32569 (random workaround are random)
 
 # Now the likelihood...
 datafiles = ["data_emcee/lightcone_mcmc_data_%s.npz"%i for i in range(11)]
 likelihood = p21mc.Likelihood1DPowerLightcone(  # All likelihood modules are prefixed by Likelihood*
     datafile = datafiles,        # All likelihoods have this, which specifies where to write/read data
     logk=False,                 # Should the power spectrum bins be log-spaced?
+<<<<<<< HEAD
     min_k=0.02,                  # Minimum k to use for likelihood
     max_k=3.2,                  # Maximum ""
+=======
+    min_k=0.01,                  # Minimum k to use for likelihood
+    max_k=3.4,                  # Maximum ""
+>>>>>>> 6a32569 (random workaround are random)
     nchunks = 11,                 # Number of chunks to break the lightcone into
     simulate=True,
 ) # For other available options, see the docstring
@@ -53,12 +67,19 @@ chain = mcmc.run_mcmc(
         L_X = [40,38,42,1],
         NU_X_THRESH = [500,100,1200,100]
     ),
+<<<<<<< HEAD
     walkersRatio=20,         # The number of walkers will be walkersRatio*nparams
     burninIterations=0,      # Number of iterations to save as burnin. Recommended to leave as zero.
     sampleIterations=400,    # Number of iterations to sample, per walker.
     threadCount=40,           # Number of processes to use in MCMC (best as a factor of walkersRatio)
+=======
+    walkersRatio=13,         # The number of walkers will be walkersRatio*nparams
+    burninIterations=0,      # Number of iterations to save as burnin. Recommended to leave as zero.
+    sampleIterations=400,    # Number of iterations to sample, per walker.
+    threadCount=26,           # Number of processes to use in MCMC (best as a factor of walkersRatio)
+>>>>>>> 6a32569 (random workaround are random)
     log_level_stream=logging.DEBUG,
     log_level_21CMMC=logging.DEBUG,
-    continue_sampling=False,  # Whether to contine sampling from previous run *up to* sampleIterations.
+    continue_sampling=True,  # Whether to contine sampling from previous run *up to* sampleIterations.
 )
 
