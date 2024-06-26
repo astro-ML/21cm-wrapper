@@ -402,6 +402,7 @@ class Simulation(Parameters):
         # initalize the progress bar
         
         for i,file in enumerate(files):
+            if debug: print(f"load {path + file}")
             lcone = p21c.outputs.LightCone.read(path + file)
             # load image
             image = lcone.brightness_temp
