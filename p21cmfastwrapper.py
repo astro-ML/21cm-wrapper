@@ -402,7 +402,7 @@ class Simulation(Parameters):
         # initalize the progress bar
         
         for i,file in enumerate(files):
-            lcone = p21c.outputs.LightCone.read(file)
+            lcone = p21c.outputs.LightCone.read(path + file)
             # load image
             image = lcone.brightness_temp
             # check if there are NaNs in the brightness map
@@ -435,7 +435,7 @@ class Simulation(Parameters):
                 "gxH": gxH
             }
             #save to new format
-            np.savez(file + ".npz", **new_format)
+            np.savez(path + file + ".npz", **new_format)
             
             # progress counter
             if len_files >= 10:
