@@ -18,6 +18,6 @@ mcmc.py
 *.yml
 *data*
 sim.py
-21mc*
-21mc_aies.py
-21mc_ns.py
+#21mc*
+#21mc_aies.py
+#21mc_ns.py

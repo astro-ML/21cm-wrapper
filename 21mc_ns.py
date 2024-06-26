@@ -12,11 +12,7 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
     redshift = 5.5,              # Lower redshift of the lightcone
     max_redshift = 12.0,          # Approximate maximum redshift of the lightcone (will be exceeded).
     user_params = dict(
-<<<<<<< HEAD
-        HII_DIM = 80,
-=======
         HII_DIM = 90,
->>>>>>> 6a32569 (random workaround are random)
         BOX_LEN = 200.0,
         PERTURB_ON_HIGH_RES = False,
         USE_INTERPOLATION_TABLES = False,
@@ -27,10 +23,6 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
     ),
     direc="_cache",
     regenerate=True,
-<<<<<<< HEAD
-=======
-    write=False,
->>>>>>> 6a32569 (random workaround are random)
     cache_mcmc=False,
     cache_dir="_cache",
     cache_ionize=False
@@ -42,13 +34,8 @@ datafiles = ["data/lightcone_mcmc_ns_data_%s.npz"%i for i in range(20)]
 likelihood = p21mc.Likelihood1DPowerLightcone(  # All likelihood modules are prefixed by Likelihood*
     datafile = datafiles,        # All likelihoods have this, which specifies where to write/read data
     logk=False,                 # Should the power spectrum bins be log-spaced?
-<<<<<<< HEAD
-    min_k=0.02,                  # Minimum k to use for likelihood
-    max_k=3.2,                  # Maximum ""
-=======
     min_k=0.01,                  # Minimum k to use for likelihood
     max_k=3.4,                  # Maximum ""
->>>>>>> 6a32569 (random workaround are random)
     nchunks = 11,                 # Number of chunks to break the lightcone into
     simulate=True
 ) # For other available options, see the docstring
