@@ -1,5 +1,10 @@
 p21cmfast wrapper v0.41 
 
+- [ ] use 21cmfast update_params instead of homebrew
+- [ ] implement 2d_ps
+- [ ] update plotting
+-> v0.5
+
 <b>Quickstart</b> <br/>
 (* - required for cluster deployment):<br/> <br/>
 
