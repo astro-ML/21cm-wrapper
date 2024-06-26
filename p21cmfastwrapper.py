@@ -376,7 +376,7 @@ class Simulation(Parameters):
     @staticmethod
     def cut_lightcone(cone, z_cut):
         amidx = np.abs(cone.lightcone_redshifts - z_cut).argmin()
-        cone.brightness_temp = cone.brightness_temp[:,:,:amidx]
+        cone.brightness_temp = cone.brightness_temp[:,:,:amidx+1]
         return cone
             
     @staticmethod
