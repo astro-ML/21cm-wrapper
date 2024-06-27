@@ -98,7 +98,7 @@ class Simulation(Parameters):
     '''Dynamically execute and plot simulations.'''
     def __init__(self, parameter_path="./", save_inclass = False, save_ondisk = True, 
                 write_cache=False, clean_cache=False, data_path = "./data/", file_name = "run_", override = False, 
-                 debug=False):
+                 debug=False, cut_lc = False):
         '''parameter_file (str): path to parameter.yaml
         save_inclass (bool): If set true, results are saved as a list in the class, very useful for testing and quick analysis. If False, results are saved as a file
         save_ondisk (bool): If set True, save results on disk
@@ -115,6 +115,7 @@ class Simulation(Parameters):
         self.sod = save_ondisk
         self.ccache = clean_cache
         self.debug = debug
+        self.cut_lc = cut_lc
         if save_inclass: self.data = []
         self.input_params['write'] = write_cache
         
@@ -146,7 +147,7 @@ class Simulation(Parameters):
             #self.randomize()
             self.kwargs_update(kargs)
             run = p21c.run_lightcone(**self.input_params)
-            run = self.cut_lightcone(run, self.max_z)
+            if self.cut_lc: run = self.cut_lightcone(run, self.max_z)
             if self.ccache: cache_tools.clear_cache()
             if commit: return run
             if self.sic: self.data.append(run)

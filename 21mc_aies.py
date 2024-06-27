@@ -6,6 +6,7 @@ import numpy as np
 from py21cmmc import analyse
 from py21cmmc import mcmc
 import py21cmmc as p21mc
+#from multiprocessing import Pool
 
 
 import logging
@@ -15,16 +16,16 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
     redshift = 5.5,              # Lower redshift of the lightcone
     max_redshift = 12.0,          # Approximate maximum redshift of the lightcone (will be exceeded).
     user_params = dict(
-        HII_DIM = 50,
+        HII_DIM = 70,
         BOX_LEN = 200.0,
         PERTURB_ON_HIGH_RES = False,
         USE_INTERPOLATION_TABLES = False,
-	N_THREADS=2),
+	N_THREADS=3),
     flag_options = dict(
         INHOMO_RECO = True,
         USE_TS_FLUCT = True,
     ),
-    regenerate=True,
+    regenerate=False,
     direc="_cache",
     cache_dir = "_cache",
     cache_mcmc=False,
@@ -36,14 +37,14 @@ datafiles = ["data_emcee/lightcone_mcmc_data_%s.npz"%i for i in range(11)]
 likelihood = p21mc.Likelihood1DPowerLightcone(  # All likelihood modules are prefixed by Likelihood*
     datafile = datafiles,        # All likelihoods have this, which specifies where to write/read data
     logk=False,                 # Should the power spectrum bins be log-spaced?
-    min_k=0.01,                  # Minimum k to use for likelihood
-    max_k=3.4,                  # Maximum ""
+    min_k=0.02,                  # Minimum k to use for likelihood
+    max_k=3.3,                  # Maximum ""
     nchunks = 11,                 # Number of chunks to break the lightcone into
     simulate=True,
 ) # For other available options, see the docstring
 
 model_name = "LightconeTest"
-if __name__=='__main__':
+if __name__ == '__main__':
     chain = mcmc.run_mcmc(
         core, likelihood,        # Use lists if multiple cores/likelihoods required. These will be eval'd in order.
         datadir='data_emcee',          # Directory for all outputs
@@ -58,8 +59,7 @@ if __name__=='__main__':
         burninIterations=0,      # Number of iterations to save as burnin. Recommended to leave as zero.
         sampleIterations=400,    # Number of iterations to sample, per walker.
         threadCount=3,           # Number of processes to use in MCMC (best as a factor of walkersRatio)
-        log_level_stream=logging.INFO,
-        log_level_21CMMC=logging.INFO,
+        log_level_stream=logging.DEBUG,
+        log_level_21CMMC=logging.DEBUG,
         continue_sampling=False,  # Whether to contine sampling from previous run *up to* sampleIterations.
     )
-
