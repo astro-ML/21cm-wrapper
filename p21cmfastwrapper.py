@@ -18,6 +18,7 @@ import h5py
 import fnmatch
 from collections.abc import Callable
 
+
 # set your cache path here
 cache_path = "./_cache"
 
@@ -92,7 +93,9 @@ class Parameters():
     def randomize(self):
         '''Shuffle random_seed'''
         if self.random_seed: self.input_params["random_seed"] = random.randint(0,99999)
-       
+
+    def give_all(self):
+       return self.input_params
     
 class Simulation(Parameters):
     '''Dynamically execute and plot simulations.'''
@@ -111,6 +114,7 @@ class Simulation(Parameters):
         super().__init__(parameter_path=parameter_path, data_path=data_path, 
                         file_name=file_name, override=override, debug=debug)
         print(f"Using 21cmFAST version {p21c.__version__}")
+        print("Using the Simulation class is depricated. Please use the Leaf class, see https://github.com/astro-ML/21cm-wrapper.")
         self.sic = save_inclass
         self.sod = save_ondisk
         self.ccache = clean_cache
@@ -461,3 +465,6 @@ class Simulation(Parameters):
         '''Clear the data/runs cache'''
         self.data.clear()
 """     
+
+
+
