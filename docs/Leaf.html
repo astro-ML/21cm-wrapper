@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Python: module Leaf</title>
+</head><body>
+
+<table class="heading">
+<tr class="heading-text decor">
+<td class="title">&nbsp;<br><strong class="title">Leaf</strong></td>
+<td class="extra"><a href=".">index</a><br><a href="file:/home/potato/Documents/projects/master/21cm-wrapper/Leaf.py">/home/potato/Documents/projects/master/21cm-wrapper/Leaf.py</a></td></tr></table>
+    <p></p>
+<p>
+<table class="section">
+<tr class="decor pkg-content-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Modules</strong></td></tr>
+    
+<tr><td class="decor pkg-content-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><table><tr><td class="multicolumn"><a href="py21cmfast.cache_tools.html">py21cmfast.cache_tools</a><br>
+<a href="fnmatch.html">fnmatch</a><br>
+<a href="logging.html">logging</a><br>
+</td><td class="multicolumn"><a href="numpy.html">numpy</a><br>
+<a href="os.html">os</a><br>
+<a href="py21cmfast.html">py21cmfast</a><br>
+</td><td class="multicolumn"><a href="py21cmfast.plotting.html">py21cmfast.plotting</a><br>
+<a href="matplotlib.pyplot.html">matplotlib.pyplot</a><br>
+<a href="yaml.html">yaml</a><br>
+</td><td class="multicolumn"></td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor index-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Classes</strong></td></tr>
+    
+<tr><td class="decor index-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl>
+<dt class="heading-text"><a href="builtins.html#object">builtins.object</a>
+</dt><dd>
+<dl>
+<dt class="heading-text"><a href="Leaf.html#Leaf">Leaf</a>
+</dt><dt class="heading-text"><a href="Leaf.html#Parameters">Parameters</a>
+</dt></dl>
+</dd>
+</dl>
+ <p>
+<table class="section">
+<tr class="decor title-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><a name="Leaf">class <strong>Leaf</strong></a>(<a href="builtins.html#object">builtins.object</a>)</td></tr>
+    
+<tr><td class="decor title-decor" rowspan=2><span class="code">&nbsp;&nbsp;&nbsp;</span></td>
+<td class="decor title-decor" colspan=2><span class="code"><a href="#Leaf">Leaf</a>(data_path:&nbsp;str&nbsp;=&nbsp;'./data/',&nbsp;data_prefix:&nbsp;str&nbsp;=&nbsp;'simrun_',&nbsp;parameter_file:&nbsp;str&nbsp;=&nbsp;None,&nbsp;cache_path:&nbsp;str&nbsp;=&nbsp;None,&nbsp;debug:&nbsp;bool&nbsp;=&nbsp;False,&nbsp;astro_params:&nbsp;dict&nbsp;=&nbsp;{},&nbsp;cosmo_params:&nbsp;dict&nbsp;=&nbsp;{},&nbsp;user_params:&nbsp;dict&nbsp;=&nbsp;{},&nbsp;flag_options={},&nbsp;global_params:&nbsp;dict&nbsp;=&nbsp;{})&nbsp;-&amp;gt;&nbsp;None<br>
+&nbsp;<br>
+<br>&nbsp;</span></td></tr>
+<tr><td>&nbsp;</td>
+<td class="singlecolumn">Methods defined here:<br>
+<dl><dt><a name="Leaf-__init__"><strong>__init__</strong></a>(self, data_path: str = './data/', data_prefix: str = 'simrun_', parameter_file: str = None, cache_path: str = None, debug: bool = False, astro_params: dict = {}, cosmo_params: dict = {}, user_params: dict = {}, flag_options={}, global_params: dict = {}) -&gt; None</dt><dd><span class="code">Initializes&nbsp;the&nbsp;<a href="#Leaf">Leaf</a>&nbsp;class&nbsp;with&nbsp;specified&nbsp;parameters.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;data_path&nbsp;(str):&nbsp;The&nbsp;path&nbsp;where&nbsp;output&nbsp;will&nbsp;be&nbsp;saved.&nbsp;Default&nbsp;is&nbsp;"./data/"<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;data_prefix&nbsp;(str):&nbsp;The&nbsp;prefix&nbsp;for&nbsp;the&nbsp;output&nbsp;files&nbsp;saved&nbsp;in&nbsp;the&nbsp;specified&nbsp;data_path.&nbsp;Default&nbsp;is&nbsp;"simrun_".<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;parameter_file&nbsp;(str):&nbsp;The&nbsp;file&nbsp;from&nbsp;which&nbsp;to&nbsp;load&nbsp;parameters&nbsp;for&nbsp;all&nbsp;runs.&nbsp;This&nbsp;allows&nbsp;for&nbsp;more&nbsp;control&nbsp;over&nbsp;specific&nbsp;parameters.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If&nbsp;None,&nbsp;standard&nbsp;parameters&nbsp;are&nbsp;used.&nbsp;Default&nbsp;is&nbsp;None.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cache_path&nbsp;(str):&nbsp;Path&nbsp;for&nbsp;the&nbsp;21cmFAST&nbsp;cache.&nbsp;If&nbsp;None,&nbsp;don't&nbsp;write&nbsp;cache.&nbsp;This&nbsp;can&nbsp;be&nbsp;faster&nbsp;if&nbsp;fast&nbsp;IO&nbsp;is&nbsp;available,&nbsp;but&nbsp;requires&nbsp;significant&nbsp;memory&nbsp;for&nbsp;large&nbsp;runs.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Recommended&nbsp;to&nbsp;use&nbsp;only&nbsp;if&nbsp;you&nbsp;plan&nbsp;to&nbsp;rerun&nbsp;simulations&nbsp;with&nbsp;the&nbsp;same&nbsp;parameters.&nbsp;Default&nbsp;is&nbsp;False.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;debug&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;enables&nbsp;verbose&nbsp;output&nbsp;to&nbsp;help&nbsp;identify&nbsp;errors.&nbsp;Default&nbsp;is&nbsp;False.</span></dd></dl>
+
+<dl><dt><a name="Leaf-debug"><strong>debug</strong></a>(self, msg: str = '')</dt><dd><span class="code">#&nbsp;utility&nbsp;function</span></dd></dl>
+
+<dl><dt><a name="Leaf-extract_keys"><strong>extract_keys</strong></a>(self, nested_dict: dict) -&gt; list[str]</dt><dd><span class="code">Helper&nbsp;function&nbsp;to&nbsp;recursively&nbsp;extract&nbsp;all&nbsp;keys&nbsp;from&nbsp;a&nbsp;nested&nbsp;dict</span></dd></dl>
+
+<dl><dt><a name="Leaf-extract_values"><strong>extract_values</strong></a>(self, nested_dict: dict) -&gt; list[float]</dt><dd><span class="code">Helper&nbsp;function&nbsp;to&nbsp;recursively&nbsp;extract&nbsp;all&nbsp;values&nbsp;from&nbsp;a&nbsp;nested&nbsp;dict</span></dd></dl>
+
+<dl><dt><a name="Leaf-fill_dict"><strong>fill_dict</strong></a>(self, nested_dict: dict, array: numpy.ndarray[typing.Any, numpy.dtype[+_ScalarType_co]], index: int = 0) -&gt; dict</dt><dd><span class="code">Helper&nbsp;function&nbsp;to&nbsp;recursively&nbsp;fill&nbsp;a&nbsp;dict&nbsp;given&nbsp;an&nbsp;array</span></dd></dl>
+
+<dl><dt><a name="Leaf-generate_range"><strong>generate_range</strong></a>(self, nested_dict: dict, func: collections.abc.Callable) -&gt; dict</dt><dd><span class="code">Helper&nbsp;function&nbsp;which&nbsp;updates&nbsp;every&nbsp;values&nbsp;in&nbsp;a&nbsp;nested&nbsp;dict&nbsp;such&nbsp;that&nbsp;the&nbsp;values&nbsp;[a,b]&nbsp;-&gt;&nbsp;func(*[a,b])</span></dd></dl>
+
+<dl><dt><a name="Leaf-lc_filter"><strong>lc_filter</strong></a>(self, tau: float, gxH0: float, make_statistics: bool, run_id: int) -&gt; bool</dt><dd><span class="code">Apply&nbsp;tau&nbsp;and&nbsp;global&nbsp;nvalueeutral&nbsp;fraction&nbsp;at&nbsp;z=5&nbsp;(gxH[0])&nbsp;filters&nbsp;according&nbsp;to&nbsp;<br>
+<a href="https://github.com/astro-ML/3D-21cmPIE-Net/blob/main/simulations/runSimulations.py">https://github.com/astro-ML/3D-21cmPIE-Net/blob/main/simulations/runSimulations.py</a></span></dd></dl>
+
+<dl><dt><a name="Leaf-load"><strong>load</strong></a>(self, path_to_obj: str, lightcone: bool) -&gt; object</dt></dl>
+
+<dl><dt><a name="Leaf-nan_adversary"><strong>nan_adversary</strong></a>(self, bt_cone: numpy.ndarray[typing.Any, numpy.dtype[+_ScalarType_co]], run_id: int) -&gt; numpy.ndarray[typing.Any, numpy.dtype[+_ScalarType_co]]</dt></dl>
+
+<dl><dt><a name="Leaf-num_elements"><strong>num_elements</strong></a>(self, x: dict) -&gt; int</dt><dd><span class="code">Helper&nbsp;function&nbsp;to&nbsp;recursively&nbsp;count&nbsp;the&nbsp;elements&nbsp;in&nbsp;a&nbsp;nested&nbsp;dict</span></dd></dl>
+
+<dl><dt><a name="Leaf-refresh_params"><strong>refresh_params</strong></a>(self, astro_params: dict = {}, cosmo_params: dict = {}, user_params: dict = {}, flag_options: dict = {}) -&gt; None</dt><dd><span class="code">Update&nbsp;parameters</span></dd></dl>
+
+<dl><dt><a name="Leaf-run_box"><strong>run_box</strong></a>(self, redshift: float, save: bool = True, random_seed: int = None, sanity_check: bool = True, make_statistics: bool = True, astro_params: dict = None, cosmo_params: dict = None, user_params: dict = None, flag_options: dict = None, global_params: dict = None, run_id: int = 0) -&gt; object | None</dt><dd><span class="code">Run&nbsp;a&nbsp;coevel&nbsp;box&nbsp;of&nbsp;21cmFAST&nbsp;given&nbsp;the&nbsp;parameters.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;redshift&nbsp;(float):&nbsp;Redshift&nbsp;at&nbsp;which&nbsp;the&nbsp;box&nbsp;will&nbsp;be&nbsp;evaluated<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;save&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;saves&nbsp;the&nbsp;result&nbsp;as&nbsp;a&nbsp;.h5,&nbsp;else&nbsp;returns&nbsp;the&nbsp;result<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;random_seed&nbsp;(int):&nbsp;Pass&nbsp;a&nbsp;random&nbsp;seed&nbsp;to&nbsp;the&nbsp;simulator,&nbsp;if&nbsp;none&nbsp;it&nbsp;will&nbsp;be&nbsp;chosen&nbsp;randomly<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sanity_check&nbsp;(bool):&nbsp;Corrects&nbsp;for&nbsp;NaNs&nbsp;(NN-interpolation)<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;make_statistics&nbsp;(bool);&nbsp;If&nbsp;True,&nbsp;saves&nbsp;interesting&nbsp;statistics&nbsp;about&nbsp;the&nbsp;box<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;**params:&nbsp;Current&nbsp;parameters&nbsp;for&nbsp;the&nbsp;simulation</span></dd></dl>
+
+<dl><dt><a name="Leaf-run_lcsampling"><strong>run_lcsampling</strong></a>(self, samplef: collections.abc.Callable, redshift: float, save: bool = True, random_seed: int = None, sanity_check: bool = True, make_statistics: bool = True, filter_peculiar: bool = True, override: bool = False, threads: int = 1, mpi: bool = False, quantity: int = 1, astro_params_range: dict = {}, cosmo_params_range: dict = {}, user_params_range: dict = {}, flag_options_range={}, global_params_range: dict = {}) -&gt; None</dt><dd><span class="code">Run&nbsp;a&nbsp;coevel&nbsp;box&nbsp;of&nbsp;21cmFAST&nbsp;given&nbsp;the&nbsp;parameters.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;redshift&nbsp;(float):&nbsp;Redshift&nbsp;at&nbsp;which&nbsp;the&nbsp;box&nbsp;will&nbsp;be&nbsp;evaluated<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;save&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;saves&nbsp;the&nbsp;result&nbsp;as&nbsp;a&nbsp;.h5,&nbsp;else&nbsp;returns&nbsp;the&nbsp;result<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;random_seed&nbsp;(int):&nbsp;Pass&nbsp;a&nbsp;random&nbsp;seed&nbsp;to&nbsp;the&nbsp;simulator,&nbsp;if&nbsp;none&nbsp;it&nbsp;will&nbsp;be&nbsp;chosen&nbsp;randomly<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sanity_check&nbsp;(bool):&nbsp;Corrects&nbsp;for&nbsp;NaNs&nbsp;(NN-interpolation)<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;make_statistics&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;saves&nbsp;interesting&nbsp;statistics&nbsp;about&nbsp;the&nbsp;box<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;check_realistic&nbsp;(bool):&nbsp;see&nbsp;lc_filter<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;override&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;override&nbsp;existing&nbsp;files<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;threads&nbsp;(int):&nbsp;Define&nbsp;how&nbsp;many&nbsp;threads&nbsp;for&nbsp;multiprocessing&nbsp;will&nbsp;be&nbsp;used<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mpi&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;use&nbsp;mpi&nbsp;instead&nbsp;of&nbsp;Python's&nbsp;multiprocessing&nbsp;library&nbsp;(usually&nbsp;not&nbsp;worth&nbsp;it)<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;quantity&nbsp;(int):&nbsp;Defines&nbsp;the&nbsp;amount&nbsp;of&nbsp;simulations&nbsp;being&nbsp;sampled<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;*params_range:&nbsp;Give&nbsp;a&nbsp;dict&nbsp;consisting&nbsp;of&nbsp;the&nbsp;parameter&nbsp;as&nbsp;the&nbsp;key&nbsp;and&nbsp;a&nbsp;list&nbsp;passed&nbsp;to&nbsp;the&nbsp;samplefunction<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e.g.&nbsp;astro_params&nbsp;=&nbsp;{HII_DIM:&nbsp;[140,&nbsp;160]}&nbsp;for&nbsp;samplef&nbsp;=&nbsp;<a href="#Leaf">Leaf</a>.uniform</span></dd></dl>
+
+<dl><dt><a name="Leaf-run_lightcone"><strong>run_lightcone</strong></a>(self, redshift: float, save: bool = True, random_seed: int = None, sanity_check: bool = True, make_statistics: bool = True, filter_peculiar: bool = True, astro_params: dict = {}, cosmo_params: dict = {}, user_params: dict = {}, flag_options: dict = {}, global_params: dict = {}, run_id: int = 0) -&gt; object | None</dt><dd><span class="code">Run&nbsp;a&nbsp;coevel&nbsp;box&nbsp;of&nbsp;21cmFAST&nbsp;given&nbsp;the&nbsp;parameters.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;redshift&nbsp;(float):&nbsp;Redshift&nbsp;at&nbsp;which&nbsp;the&nbsp;box&nbsp;will&nbsp;be&nbsp;evaluated<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;save&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;saves&nbsp;the&nbsp;result&nbsp;as&nbsp;a&nbsp;.h5,&nbsp;else&nbsp;returns&nbsp;the&nbsp;result<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;random_seed&nbsp;(int):&nbsp;Pass&nbsp;a&nbsp;random&nbsp;seed&nbsp;to&nbsp;the&nbsp;simulator,&nbsp;if&nbsp;none&nbsp;it&nbsp;will&nbsp;be&nbsp;chosen&nbsp;randomly<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sanity_check&nbsp;(bool):&nbsp;Corrects&nbsp;for&nbsp;NaNs&nbsp;(NN-interpolation)<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;make_statistics&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;saves&nbsp;interesting&nbsp;statistics&nbsp;about&nbsp;the&nbsp;box<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;check_realistic&nbsp;(bnp.linspace(0,9,10)ool):&nbsp;see&nbsp;function&nbsp;lc_filter<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;**params:&nbsp;Current&nbsp;parameters&nbsp;for&nbsp;the&nbsp;simulation</span></dd></dl>
+
+<dl><dt><a name="Leaf-run_multilc"><strong>run_multilc</strong></a>(self, kwargs)</dt><dd><span class="code">Wrapper&nbsp;to&nbsp;pass&nbsp;dict&nbsp;of&nbsp;arguments&nbsp;to&nbsp;function&nbsp;with&nbsp;Python's&nbsp;multiprocessing&nbsp;lib</span></dd></dl>
+
+<dl><dt><a name="Leaf-save"><strong>save</strong></a>(self, obj: object, fname: str, direc: str, run_id: int | str) -&gt; None</dt></dl>
+
+<hr>
+Static methods defined here:<br>
+<dl><dt><a name="Leaf-gauss"><strong>gauss</strong></a>(mu, sig)</dt></dl>
+
+<dl><dt><a name="Leaf-generate_run_ids"><strong>generate_run_ids</strong></a>(quantity: int, threads: int, offset: int) -&gt; Generator[numpy.ndarray[Any, numpy.dtype[+_ScalarType_co]], NoneType, NoneType]</dt></dl>
+
+<dl><dt><a name="Leaf-gumbel"><strong>gumbel</strong></a>(loc, scale)</dt></dl>
+
+<dl><dt><a name="Leaf-uniform"><strong>uniform</strong></a>(a, b)</dt><dd><span class="code">#&nbsp;predefined&nbsp;samplefunctions</span></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><span class="code">dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</span></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><span class="code">list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</span></dd>
+</dl>
+</td></tr></table> <p>
+<table class="section">
+<tr class="decor title-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><a name="Parameters">class <strong>Parameters</strong></a>(<a href="builtins.html#object">builtins.object</a>)</td></tr>
+    
+<tr><td class="decor title-decor" rowspan=2><span class="code">&nbsp;&nbsp;&nbsp;</span></td>
+<td class="decor title-decor" colspan=2><span class="code"><a href="#Parameters">Parameters</a>(parameter_path,&nbsp;file_name,&nbsp;data_path,&nbsp;override,&nbsp;debug)<br>
+&nbsp;<br>
+Auxillary&nbsp;class&nbsp;to&nbsp;initialize&nbsp;and&nbsp;update&nbsp;parameters&nbsp;given&nbsp;a&nbsp;config&nbsp;file&nbsp;or&nbsp;on&nbsp;the&nbsp;fly.<br>&nbsp;</span></td></tr>
+<tr><td>&nbsp;</td>
+<td class="singlecolumn">Methods defined here:<br>
+<dl><dt><a name="Parameters-__init__"><strong>__init__</strong></a>(self, parameter_path, file_name, data_path, override, debug)</dt><dd><span class="code">Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</span></dd></dl>
+
+<dl><dt><a name="Parameters-give_all"><strong>give_all</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Parameters-kwargs_revert"><strong>kwargs_revert</strong></a>(self)</dt><dd><span class="code">Revert&nbsp;changes&nbsp;in&nbsp;the&nbsp;parameters</span></dd></dl>
+
+<dl><dt><a name="Parameters-kwargs_update"><strong>kwargs_update</strong></a>(self, kargs)</dt><dd><span class="code">Update&nbsp;the&nbsp;parameter&nbsp;config&nbsp;given&nbsp;kargs</span></dd></dl>
+
+<dl><dt><a name="Parameters-randomize"><strong>randomize</strong></a>(self)</dt><dd><span class="code">Shuffle&nbsp;random_seed</span></dd></dl>
+
+<hr>
+Static methods defined here:<br>
+<dl><dt><a name="Parameters-wrap_params"><strong>wrap_params</strong></a>(params)</dt><dd><span class="code">Change&nbsp;the&nbsp;parameter&nbsp;file&nbsp;to&nbsp;run&nbsp;a&nbsp;single&nbsp;box&nbsp;and&nbsp;revert&nbsp;the&nbsp;changes&nbsp;afterwards.<br>
+This&nbsp;is&nbsp;necessary&nbsp;or&nbsp;else&nbsp;21cmfast&nbsp;returns&nbsp;an&nbsp;error.</span></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><span class="code">dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</span></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><span class="code">list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</span></dd>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor data-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Data</strong></td></tr>
+    
+<tr><td class="decor data-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><strong>Generator</strong> = typing.Generator<br>
+<strong>NDArray</strong> = numpy.ndarray[typing.Any, numpy.dtype[+_ScalarType_co]]<br>
+<strong>logger</strong> = &lt;Logger 21cmFAST (DEBUG)&gt;</td></tr></table>
+</body></html>
