@@ -17,3 +17,4 @@ mcmc.py
 *.jpg
 *.yml
 *data*
+*.h5
