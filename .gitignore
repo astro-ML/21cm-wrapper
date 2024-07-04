@@ -18,3 +18,5 @@ mcmc.py
 *.yml
 *data*
 *.h5
+21mc*
+2D_power*
