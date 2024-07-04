@@ -3,10 +3,12 @@ from matplotlib import pyplot as plt
 import os 
 import logging, os
 logger = logging.getLogger('21cmFAST')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 from py21cmfast import plotting
 from py21cmfast import cache_tools
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor as Pool
+from multiprocessing import get_context
+#from multiprocessing import set_start_method, Pool
 #import timeit
 import numpy as np
 import yaml
@@ -23,8 +25,8 @@ from alive_progress import alive_bar
 class Leaf():
     def __init__(self, data_path: str = "./data/", data_prefix: str = "simrun_", parameter_file: str = None, 
                  cache_path: str = None, debug: bool = False, 
-                astro_params: dict = None, cosmo_params: dict = None, user_params: dict = None,
-                flag_options = None, global_params: dict = None) -> None:
+                astro_params: dict = {}, cosmo_params: dict = {}, user_params: dict = {},
+                flag_options = {}, global_params: dict = {}) -> None:
         """
         Initializes the Leaf class with specified parameters.
 
@@ -62,23 +64,18 @@ class Leaf():
         p21c.config['direc'] = cache_path
         # cache_tools.clear_cache(direc=cache_path) # <- clear cache
 
-        if debug: print("Define global parameters...")
+        if debug: print("Set initial parameters...")
 
         self.astroparams = p21c.inputs.AstroParams(**astro_params)
         self.cosmoparams = p21c.inputs.CosmoParams(**cosmo_params)
         self.flagparams = p21c.inputs.FlagOptions(**flag_options)
-        self.globalparams = p21c.global_params if global_params # may not work
+        self.globalparams = global_params
         self.userparams = p21c.inputs.UserParams(**user_params)
 
         # init satistics
         self.nancounter = []
         self.tau = []
         self.filtercounter = []
-
-        # predefined samplefunctions
-        self.uniform = lambda a,b,**kwargs: np.random.uniform(a,b,**kwargs)
-        self.gauss = lambda mu, sig, **kwargs: np.random.gauss(mu, sig, **kwargs)
-        self.gumbel = lambda loc, scale, **kwargs: np.random.gumbel(loc, scale, **kwargs) # <- :3
 
         if parameter_file is not None:
             if self.debug: print("Use parameter file.")
@@ -112,8 +109,8 @@ class Leaf():
             **params: Current parameters for the simulation
         '''
         self.debug("Begin box simulation ...")
-        self.refresh_params(self, astro_params = astro_params, cosmo_params = cosmo_params,
-                            user_params = user_params, flag_options = flag_options, global_params = global_params)
+        self.refresh_params(astro_params = astro_params, cosmo_params = cosmo_params,
+                            user_params = user_params, flag_options = flag_options)
         self.debug("Parameter successfully refreshed.")    
         self.debug("Current parameters are:\n" + 
                    "astro_params: " + str(astro_params) + "\n" + 
@@ -121,23 +118,23 @@ class Leaf():
                    "user_params: " + str(user_params) + "\n" + 
                    "flag_options: " + str(flag_options) + "\n" + 
                    "global_params: " + str(global_params))
-        with self.globalparams:
+        with p21c.global_params.use(**global_params):
             run = p21c.run_coeval(redshift=redshift, astro_params = self.astroparams, 
                             cosmo_params = self.cosmoparams,
                             user_params = self.userparams, flag_options = self.flagparams, 
-                            global_params = self.globalparams, random_seed=random_seed, write=self.write_cache)
+                            random_seed=random_seed, write=self.write_cache)
             if sanity_check:
                 run.brightness_temp = self.nan_adversary(run.brightness_temp, run_id)
             if save:
-                Leaf.save(run, fname=self.data_prefix, direc=self.data_path, run_id=run_id)
+                self.save(run, fname=self.data_prefix, direc=self.data_path, run_id=run_id)
             else:
                 return run
             
     def run_lightcone(self, redshift: float, save: bool = True, random_seed: int = None, 
-                sanity_check: bool = True, make_statistics: bool = True, filter: bool = True,
-                astro_params: dict = None, cosmo_params: dict = None, user_params: dict = None,
-                flag_options: dict = None, global_params: dict = None,
-                run_id: int = 0, bar: Callable = None) -> object | None:
+                sanity_check: bool = True, make_statistics: bool = True, filter_peculiar: bool = True,
+                astro_params: dict = {}, cosmo_params: dict = {}, user_params: dict = {},
+                flag_options: dict = {}, global_params: dict = {},
+                run_id: int = 0) -> object | None:
         '''Run a coevel box of 21cmFAST given the parameters.
         
         Args:
@@ -151,51 +148,50 @@ class Leaf():
 
             make_statistics (bool): If True, saves interesting statistics about the box
 
-            check_realistic (bool): see function lc_filter
+            check_realistic (bnp.linspace(0,9,10)ool): see function lc_filter
 
             **params: Current parameters for the simulation
         '''
         self.debug("Begin lightcone simulation ...")
-        self.refresh_params(self, astro_params = astro_params, cosmo_params = cosmo_params,
-                            user_params = user_params, flag_options = flag_options, global_params = global_params)
+        self.refresh_params(astro_params = astro_params, cosmo_params = cosmo_params,
+                            user_params = user_params, flag_options = flag_options)
         self.debug("Parameter successfully refreshed.")    
         self.debug("Current parameters are:\n" + 
-                   "astro_params: " + str(astro_params) + "\n" + 
-                   "cosmo_params: " + str(cosmo_params) + "\n" + 
-                   "user_params: " + str(user_params) + "\n" + 
-                   "flag_options: " + str(flag_options) + "\n" + 
+                   "astro_params: " + str(self.astroparams) + "\n" + 
+                   "cosmo_params: " + str(self.cosmoparams) + "\n" + 
+                   "user_params: " + str(self.userparams) + "\n" + 
+                   "flag_options: " + str(self.flagparams) + "\n" + 
                    "global_params: " + str(global_params))
-        with self.globalparams:
-            run = p21c.run_coeval(redshift=redshift, astro_params = self.astroparams, 
+        with p21c.global_params.use(**global_params):
+            run = p21c.run_lightcone(redshift=redshift, astro_params = self.astroparams, 
                             cosmo_params = self.cosmoparams,
                             user_params = self.userparams, flag_options = self.flagparams, 
-                            global_params = self.globalparams, random_seed=random_seed, write=self.write_cache)
+                            random_seed=random_seed, write=self.write_cache)
+            self.debug("Done simulating. Do sanity check...")
             if sanity_check:
-                run.brightness_temp = self.nan_adversary(run.brightness_temp, run_id, self.debug)
+                run.brightness_temp = self.nan_adversary(run.brightness_temp, run_id)
+            self.debug("Sanity check passed. Write statistics...")
             if make_statistics:
                 # compute tau   
                 self.tau.append(
                     p21c.compute_tau(redshifts=run.node_redshifts[::-1],
                                      global_xHI=run.global_xH[::-1]))
-            if filter:    
-                if not self.lc_filter(tau = self.tau[-1], gxH0=run.ghH[0], make_statistics=make_statistics, run_id=run_id):
-                    if bar is not None:
-                        bar()
+            self.debug("Statistics written. Do filtering...")
+            if filter_peculiar:    
+                if not self.lc_filter(tau = self.tau[-1], gxH0=run.global_xH[0], make_statistics=make_statistics, run_id=run_id):
                     return
+            self.debug("Filtering passed. Save or return file now.")
             if save:
-                Leaf.save(run, fname=self.data_prefix, direc=self.data_path, run_id=run_id)
-                if bar is not None:
-                    bar()
+                self.save(obj=run, fname=self.data_prefix, direc=self.data_path, run_id=run_id)
             else:
-                if bar is not None:
-                    bar()
                 return run  
+            
 
     def run_lcsampling(self, samplef: Callable, redshift: float, save: bool = True, random_seed: int = None, 
-                sanity_check: bool = True, make_statistics: bool = True, filter: bool = True,
+                sanity_check: bool = True, make_statistics: bool = True, filter_peculiar: bool = True,
                 override: bool = False, threads: int = 1, mpi: bool = False, quantity: int = 1,
-                astro_params_range: dict = None, cosmo_params_range: dict = None, user_params_range: dict = None,
-                flag_options_range = None, global_params_range: dict = None) -> None:
+                astro_params_range: dict = {}, cosmo_params_range: dict = {}, user_params_range: dict = {},
+                flag_options_range = {}, global_params_range: dict = {}) -> None:
         '''Run a coevel box of 21cmFAST given the parameters.
         
         Args:
@@ -222,52 +218,54 @@ class Leaf():
             *params_range: Give a dict consisting of the parameter as the key and a list passed to the samplefunction
                             e.g. astro_params = {HII_DIM: [140, 160]} for samplef = Leaf.uniform
         '''
-        if astro_params_range is None and cosmo_params_range is None and user_params_range is None and flag_options_range is None and global_params_range is None:
+        if astro_params_range == {} and cosmo_params_range == {} and user_params_range == {} and flag_options_range == {} and global_params_range == {}:
             print("No parameter ranges gives ... There is nothing to do.")
             return
         files = fnmatch.filter(os.listdir(self.data_path), self.data_prefix + "*")
         offset = 0 if override else len(files)
-        counter = quantity
-        with alive_bar(np.ceil(quantity, dtype=int), refresh_secs = 30, title="Simulation progress") as bar:
-            for run_ids in Leaf.generate_run_ids(quantity=quantity, threads=quantity, offset=offset):
-                # define the parameters
-                runner = [{"redshift":redshift, "save":save, "random_seed":random_seed,
-                                            "sanity_check":sanity_check, "make_statistics":make_statistics,
-                                            "filter":filter, 
-                                            "astro_params":self.generate_range(astro_params_range, samplef),
-                                            "cosmo_params":self.generate_range(astro_params_range, samplef),
-                                            "user_params":self.generate_range(astro_params_range, samplef),
-                                            "flag_options":self.generate_range(astro_params_range, samplef),
-                                            "global_params":self.generate_range(astro_params_range, samplef),
-                                            "run_id":run_id, "bar": bar} for run_id in run_ids]
-                self.debug("Parameters:\n", runner)
-                # define pool type
-                schwimmhalle = MPIPool() if mpi else Pool(threads)
-                # run batch
-                with schwimmhalle as p:
-                    p.map(self.run_lightcone, runner)
+        run_ids = np.linspace(0,  quantity-1, quantity, dtype=int) + offset
+        #for run_ids in Leaf.generate_run_ids(quantity=quantity, threads=quantity, offset=offset): <- is Generator hence cannot be pickled (I hate my life)
+            # define the parameters
+        runner = [{"redshift":redshift, "save":save, "random_seed":random_seed,
+                                    "sanity_check":sanity_check, "make_statistics":make_statistics,
+                                    "filter_peculiar":filter_peculiar, 
+                                    "astro_params":self.generate_range(astro_params_range, samplef),
+                                    "cosmo_params":self.generate_range(cosmo_params_range, samplef),
+                                    "user_params":self.generate_range(user_params_range, samplef),
+                                    "flag_options":self.generate_range(flag_options_range, samplef),
+                                    "global_params":self.generate_range(global_params_range, samplef),
+                                    "run_id":run_id} for run_id in run_ids]
+        self.debug("Parameters:\n" + str(runner))
+        # define pool type
+        #set_start_method("spawn")
+        schwimmhalle = MPIPool() if mpi else Pool(max_workers=threads, max_tasks_per_child=1, mp_context=get_context('spawn')) #Pool(maxtasksperchild=1, processes=threads)
+        # run batch
+        self.debug("Start running simulation...")
+        with schwimmhalle as p:
+            return p.map(self.run_multilc, runner)
 
         if make_statistics:
             print("TBA")
 
+    
+    def run_multilc(self, kwargs): 
+        '''Wrapper to pass dict of arguments to function with Python's multiprocessing lib'''
+        return self.run_lightcone(**kwargs)
 
 
-            
-
-    def refresh_params(self, astro_params: dict = None, cosmo_params: dict = None, user_params: dict = None,
-                        flag_options: dict = None, global_params: dict = None) -> None:
+    def refresh_params(self, astro_params: dict = {}, cosmo_params: dict = {}, user_params: dict = {},
+                        flag_options: dict = {}) -> None:
         '''Update parameters'''
         self.astroparams.update(**astro_params)
         self.cosmoparams.update(**cosmo_params)
         self.userparams.update(**user_params)
         self.flagparams.update(**flag_options)
-        self.globalparams = global_params.use(**global_params)
 
     
 
     # utility function
-    def debug(self, msg: str = "") -> None:
-        if self.debug: print(msg)
+    def debug(self, msg: str = ""):
+        if self.dodebug: print(msg)
     
 
     def nan_adversary(self, bt_cone: NDArray, run_id: int) -> NDArray:
@@ -307,16 +305,16 @@ class Leaf():
         else:
             return bt_cone
         
-    @staticmethod
-    def save(obj: object, fname: str, direc: str, run_id: int|str) -> None:
-        obj.save(fname=fname+str(run_id), direc=direc)
+    def save(self, obj: object, fname: str, direc: str, run_id: int|str) -> None:
+        self.debug(f"Save {run_id} to disk...")
+        obj.save(fname=fname+str(run_id)+".h5", direc=direc)
     
-    @staticmethod
-    def load(path_to_obj: str, lightcone: bool) -> object:
+    def load(self, path_to_obj: str, lightcone: bool) -> object:
+        self.debug(f"Load {path_to_obj} from disk...")
         return p21c.outputs.LightCone.read(path_to_obj) if lightcone else p21c.outputs.Coeval.read(path_to_obj)
 
     def lc_filter(self, tau: float, gxH0: float, make_statistics: bool, run_id: int) -> bool:
-        '''Apply tau and global neutral fraction at z=5 (gxH[0]) filters according to 
+        '''Apply tau and global nvalueeutral fraction at z=5 (gxH[0]) filters according to 
         https://github.com/astro-ML/3D-21cmPIE-Net/blob/main/simulations/runSimulations.py'''
         if tau>0.089 or gxH0>0.1: 
             self.debug("Lightcone rejected." + f" {tau=} " + f" {gxH0=} ")
@@ -393,6 +391,14 @@ class Leaf():
                     yield np.linspace(quantity - (counter + threads),  quantity-counter-1, threads, dtype=int) + offset
                 else:
                     yield np.linspace(quantity - (counter + threads),  quantity - 1, threads + counter, dtype=int) + offset
+
+    # predefined samplefunctions
+    @staticmethod
+    def uniform(a,b): return np.random.uniform(a,b)
+    @staticmethod
+    def gauss(mu, sig): return np.random.gauss(mu, sig)
+    @staticmethod
+    def gumbel(loc, scale): return np.random.gumbel(loc, scale) # <- :3
     
 
 
