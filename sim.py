@@ -3,7 +3,8 @@ user_parameter = {
     "HII_DIM": 140,
     "BOX_LEN": 200,
     "N_THREADS": 2,
-    "USE_INTERPOLATION_TABLES": True
+    "USE_INTERPOLATION_TABLES": True,
+    "PERTURB_ON_HIGH_RES": True
 }
 flag_options = {
     "INHOMO_RECO": True,
