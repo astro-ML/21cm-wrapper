@@ -245,7 +245,13 @@ class Leaf():
             return p.map(self.run_multilc, runner)
 
         if make_statistics:
-            print("TBA")
+            np.save(self.data_path + "statistics.npy", {
+                "nancounter": self.nancounter,
+                "tau": self.tau,
+                "filtercounter": self.filtercounter
+            })
+
+            
 
     
     def run_multilc(self, kwargs): 
