@@ -1,6 +1,6 @@
 from Leaf import *
 user_parameter = {
-    "HII_DIM": 200,
+    "HII_DIM": 140,
     "BOX_LEN": 200,
     "N_THREADS": 2,
     "USE_INTERPOLATION_TABLES": True
