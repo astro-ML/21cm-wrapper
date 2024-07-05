@@ -4,7 +4,6 @@ user_parameter = {
     "BOX_LEN": 200,
     "N_THREADS": 2,
     "USE_INTERPOLATION_TABLES": True
-    ""
 }
 flag_options = {
     "INHOMO_RECO": True,
