@@ -1,5 +1,8 @@
 p21cmfast wrapper v0.41 
 
+This version is depricated and won't be maintained anymore. Please use the newer version on main. 
+
+
 <b>Quickstart</b> <br/>
 (* - required for cluster deployment):<br/> <br/>
 
