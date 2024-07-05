@@ -18,5 +18,7 @@ mcmc.py
 *.yml
 *data*
 *.h5
-21mc*
-2D_power*
+2D_power_spectra.ipynb
+data*
+test.py
+aies_lil.py
