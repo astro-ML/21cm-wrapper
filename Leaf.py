@@ -20,7 +20,7 @@ from collections.abc import Callable
 from typing import Generator
 from p21cmfastwrapper import Parameters
 from numpy.typing import NDArray
-from alive_progress import alive_bar
+#from alive_progress import alive_bar
 
 class Leaf():
     def __init__(self, data_path: str = "./data/", data_prefix: str = "simrun_", parameter_file: str = None, 
