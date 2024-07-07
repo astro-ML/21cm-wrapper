@@ -20,7 +20,8 @@ cosmo_params:
   ## https://21cmfast.readthedocs.io/en/latest/reference/_autosummary/inputs/py21cmfast.inputs.CosmoParams.html ##
   # use default parameters for this section
   use_default: true
-
+                "astro_params": {"HII_EFF_FACTOR":[10,250],"L_X":[38,42],"NU_X_THRESH":[100,1500],"ION_Tvir_MIN":[4.0,5.3]},
+                "cosmo_params": {"OMm":[0.2,0.4]}}
 user_params:
   ### hyperparameters for the coeval simulation call ###
   ## https://21cmfast.readthedocs.io/en/latest/reference/_autosummary/inputs/py21cmfast.inputs.UserParams.html ##
