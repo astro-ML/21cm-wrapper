@@ -243,7 +243,7 @@ class Leaf():
         # run batch
         self.debug("Start running simulation...")
         with schwimmhalle as p:
-            return p.map(self.run_multilc, runner)
+            p.map(self.run_multilc, runner)
 
         if make_statistics:
             np.save(self.data_path + "statistics.npy", {
