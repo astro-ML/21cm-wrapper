@@ -172,14 +172,14 @@ class Leaf():
                 run.brightness_temp = self.nan_adversary(run.brightness_temp, run_id)
             self.debug("Sanity check passed. Write statistics...")
             if make_statistics or filter_peculiar:
-                tau = p21c.compute_tau(redshifts=run.node_redshifts,
-                                     global_xHI=run.global_xH)
+                tau = p21c.compute_tau(redshifts=run.node_redshifts[::-1],
+                                     global_xHI=run.global_xH[::-1])
             if make_statistics:
                 # compute tau   
                 self.tau.append(tau)
             self.debug("Statistics written. Do filtering...")
             if filter_peculiar:    
-                if not self.lc_filter(tau = self.tau[-1], gxH0=run.global_xH[0], make_statistics=make_statistics, run_id=run_id):
+                if not self.lc_filter(tau = self.tau[-1], gxH0=run.global_xH[-1], make_statistics=make_statistics, run_id=run_id):
                     return
             self.debug("Filtering passed. Save or return file now.")
             if save:
