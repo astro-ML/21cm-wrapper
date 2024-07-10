@@ -7,6 +7,7 @@ logger.setLevel(logging.INFO)
 from py21cmfast import plotting
 from py21cmfast import cache_tools
 from concurrent.futures import ProcessPoolExecutor as Pool
+from concurrent.futures import as_completed
 from multiprocessing import get_context
 #from multiprocessing import set_start_method, Pool
 #import timeit
