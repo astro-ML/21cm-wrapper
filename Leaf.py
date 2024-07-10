@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import os 
 import logging, os
 logger = logging.getLogger('21cmFAST')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 from py21cmfast import plotting
 from py21cmfast import cache_tools
 from concurrent.futures import ProcessPoolExecutor as Pool
@@ -20,11 +20,13 @@ from collections.abc import Callable
 from typing import Generator
 from p21cmfastwrapper import Parameters
 from numpy.typing import NDArray
-#from alive_progress import alive_bar
+from alive_progress import alive_bar
+import pickle
+
 
 class Leaf():
     def __init__(self, data_path: str = "./data/", data_prefix: str = "simrun_", parameter_file: str = None, 
-                 cache_path: str = None, debug: bool = False, 
+                 cache_path: str = None, debug: bool = False, redshift: float = None,
                 astro_params: dict = {}, cosmo_params: dict = {}, user_params: dict = {},
                 flag_options = {}, global_params: dict = {}) -> None:
         """
@@ -66,6 +68,7 @@ class Leaf():
 
         if debug: print("Set initial parameters...")
 
+        self.redshift = redshift
         self.astroparams = p21c.inputs.AstroParams(**astro_params)
         self.cosmoparams = p21c.inputs.CosmoParams(**cosmo_params)
         self.flagparams = p21c.inputs.FlagOptions(**flag_options)
@@ -88,7 +91,7 @@ class Leaf():
             self.globalparams(input_params["global_params"])
             if self.debug: print("Parameters from parameter file successfully loaded and set.")
 
-    def run_box(self, redshift: float, save: bool = True, random_seed: int = None, 
+    def run_box(self, redshift: float = None, save: bool = True, random_seed: int = None, 
                 sanity_check: bool = True, make_statistics: bool = True,
                 astro_params: dict = None, cosmo_params: dict = None, user_params: dict = None,
                 flag_options: dict = None, global_params: dict = None,
@@ -111,6 +114,7 @@ class Leaf():
         self.debug("Begin box simulation ...")
         self.refresh_params(astro_params = astro_params, cosmo_params = cosmo_params,
                             user_params = user_params, flag_options = flag_options)
+        if redshift is None: redshift = self.redshift
         self.debug("Parameter successfully refreshed.")    
         self.debug("Current parameters are:\n" + 
                    "astro_params: " + str(astro_params) + "\n" + 
@@ -130,8 +134,8 @@ class Leaf():
             else:
                 return run
             
-    def run_lightcone(self, redshift: float, save: bool = True, random_seed: int = None, 
-                sanity_check: bool = True, make_statistics: bool = True, filter_peculiar: bool = True,
+    def run_lightcone(self, redshift: float = None, save: bool = True, random_seed: int = None, 
+                sanity_check: bool = True, make_statistics: bool = False, filter_peculiar: bool = True,
                 astro_params: dict = {}, cosmo_params: dict = {}, user_params: dict = {},
                 flag_options: dict = {}, global_params: dict = {},
                 run_id: int = 0) -> object | None:
@@ -155,6 +159,7 @@ class Leaf():
         self.debug("Begin lightcone simulation ...")
         self.refresh_params(astro_params = astro_params, cosmo_params = cosmo_params,
                             user_params = user_params, flag_options = flag_options)
+        if redshift is None: redshift = self.redshift
         self.debug("Parameter successfully refreshed.")    
         self.debug("Current parameters are:\n" + 
                    "astro_params: " + str(self.astroparams) + "\n" + 
@@ -188,7 +193,7 @@ class Leaf():
                 return run  
             
 
-    def run_lcsampling(self, samplef: Callable, redshift: float, save: bool = True, random_seed: int = None, 
+    def run_lcsampling(self, samplef: Callable, redshift: float = None, save: bool = True, random_seed: int = None, 
                 sanity_check: bool = True, make_statistics: bool = True, filter_peculiar: bool = True,
                 override: bool = False, threads: int = 1, mpi: bool = False, quantity: int = 1,
                 astro_params_range: dict = {}, cosmo_params_range: dict = {}, user_params_range: dict = {},
@@ -222,6 +227,7 @@ class Leaf():
         if astro_params_range == {} and cosmo_params_range == {} and user_params_range == {} and flag_options_range == {} and global_params_range == {}:
             print("No parameter ranges gives ... There is nothing to do.")
             return
+        if redshift is None: redshift = self.redshift
         files = fnmatch.filter(os.listdir(self.data_path), self.data_prefix + "*")
         offset = 0 if override else len(files)
         run_ids = np.linspace(0,  quantity-1, quantity, dtype=int) + offset
@@ -407,7 +413,46 @@ class Leaf():
     @staticmethod
     def gumbel(loc, scale): return np.random.gumbel(loc, scale) # <- :3
     
+    @staticmethod
+    def plot_parameter_distribution(path: str = "./data/", prefix: str = "simrun_") -> None:
 
+        files = fnmatch.filter(os.listdir(path), prefix + "*")
+
+
+        OMm, HII_EFF_FACTOR, L_X, NU_X_THRESH, ION_Tvir_MIN  = ([] for _ in range(5))
+
+        with alive_bar(len(files), force_tty=True) as bar:
+            for file in files:
+                lc = p21c.outputs.LightCone.read(fname=file, direc=path)
+                OMm.append(lc.cosmo_params.OMm)
+                HII_EFF_FACTOR.append(lc.astro_params.HII_EFF_FACTOR)
+                L_X.append(lc.astro_params.L_X)
+                NU_X_THRESH.append(lc.astro_params.NU_X_THRESH)
+                ION_Tvir_MIN.append(lc.astro_params.ION_Tvir_MIN)
+                bar()
+
+        fig, ax = plt.subplots(3,2, figsize=(8,12))
+
+        ax[0,0].hist(OMm, bins=20,density=True)
+        ax[0,0].set_title("OMm")
+
+        ax[0,1].hist(HII_EFF_FACTOR, bins=20,density=True)
+        ax[0,1].set_title("HII_EFF_FACTOR")
+
+        ax[1,0].hist(L_X, bins=20,density=True)
+        ax[1,0].set_title("L_X")
+
+        ax[1,1].hist(NU_X_THRESH, bins=20,density=True)
+        ax[1,1].set_title("NU_X_THRESH")
+
+        ax[2,0].hist(ION_Tvir_MIN, bins=20,density=True)
+        ax[2,0].set_title("ION_Tvir_MIN")
+
+
+        ax[2,1].axis("off")
+        fig.tight_layout()
+        fig.savefig("./data/parameter_distribution.png")
+        fig.show()
 
 
 
