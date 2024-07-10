@@ -1,0 +1,3 @@
+[submodule "21cmFAST"]
+	path = 21cmFAST
+	url = https://github.com/Kojobu/21cmFAST.git

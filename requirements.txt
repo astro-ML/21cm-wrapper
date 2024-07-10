@@ -2,9 +2,10 @@
 matplotlib
 numpy
 pyyaml
-powerbox
+#powerbox
 schwimmbad
 emcee 
-pymultinest
+dynesty
 mpi4py
-21CMMC
+#21CMMC
+alive-progress

@@ -12,7 +12,7 @@ from multiprocessing import get_context
 #import timeit
 import numpy as np
 import yaml
-from powerbox.tools import get_power
+#from powerbox.tools import get_power
 from schwimmbad import MPIPool
 #import h5py
 import fnmatch
@@ -33,17 +33,21 @@ class Leaf():
         Initializes the Leaf class with specified parameters.
 
         Args:
-            data_path (str): The path where output will be saved. Default is "./data/"
+            data_path: The path where output will be saved. Default is "./data/"
 
-            data_prefix (str): The prefix for the output files saved in the specified data_path. Default is "simrun_".
+            data_prefix: The prefix for the output files saved in the specified data_path. Default is "simrun_".
             
-            parameter_file (str): The file from which to load parameters for all runs. This allows for more control over specific parameters.
+            parameter_file: The file from which to load parameters for all runs. This allows for more control over specific parameters.
                                   If None, standard parameters are used. Default is None.
             
-            cache_path (str): Path for the 21cmFAST cache. If None, don't write cache. This can be faster if fast IO is available, but requires significant memory for large runs.
+            cache_path: Path for the 21cmFAST cache. If None, don't write cache. This can be faster if fast IO is available, but requires significant memory for large runs.
                                 Recommended to use only if you plan to rerun simulations with the same parameters. Default is False.
             
-            debug (bool): If True, enables verbose output to help identify errors. Default is False.
+            debug: If True, enables verbose output to help identify errors. Default is False.
+
+            redshift: The redshift at which the simulation ends
+
+            **Parameter for 21cmFAST
         """
         
         # define global variables
@@ -99,15 +103,15 @@ class Leaf():
         '''Run a coevel box of 21cmFAST given the parameters.
         
         Args:
-            redshift (float): Redshift at which the box will be evaluated
+            redshift: Redshift at which the box will be evaluated
 
-            save (bool): If True, saves the result as a .h5, else returns the result
+            save: If True, saves the result as a .h5, else returns the result
 
-            random_seed (int): Pass a random seed to the simulator, if none it will be chosen randomly
+            random_seed: Pass a random seed to the simulator, if none it will be chosen randomly
 
-            sanity_check (bool): Corrects for NaNs (NN-interpolation)
+            sanity_check: Corrects for NaNs (NN-interpolation)
 
-            make_statistics (bool); If True, saves interesting statistics about the box
+            make_statistics: If True, saves interesting statistics about the box
 
             **params: Current parameters for the simulation
         '''
@@ -142,17 +146,17 @@ class Leaf():
         '''Run a coevel box of 21cmFAST given the parameters.
         
         Args:
-            redshift (float): Redshift at which the box will be evaluated
+            redshift: Redshift at which the box will be evaluated
 
-            save (bool): If True, saves the result as a .h5, else returns the result
+            save: If True, saves the result as a .h5, else returns the result
 
-            random_seed (int): Pass a random seed to the simulator, if none it will be chosen randomly
+            random_seed: Pass a random seed to the simulator, if none it will be chosen randomly
 
-            sanity_check (bool): Corrects for NaNs (NN-interpolation)
+            sanity_check: Corrects for NaNs (NN-interpolation)
 
-            make_statistics (bool): If True, saves interesting statistics about the box
+            make_statistics: If True, saves interesting statistics about the box
 
-            check_realistic (bnp.linspace(0,9,10)ool): see function lc_filter
+            filter_peculiar: see function lc_filter
 
             **params: Current parameters for the simulation
         '''
@@ -211,7 +215,7 @@ class Leaf():
 
             make_statistics (bool): If True, saves interesting statistics about the box
 
-            check_realistic (bool): see lc_filter
+            filter_peculiar (bool): see lc_filter
 
             override (bool): If True, override existing files
 

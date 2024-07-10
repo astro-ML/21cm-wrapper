@@ -22,3 +22,6 @@ mcmc.py
 data*
 test.py
 aies_lil.py
+*.png
+*.jpg
+!Leaf.png
