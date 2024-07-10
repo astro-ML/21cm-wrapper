@@ -3,7 +3,7 @@ is supposed to provide an easy, high-level interface written to <br/>
 minimize pain when doing doing simulations or other things with 21cmFAST.<br/>
 It also provides the user with a fast multiprocessing interface for large-scale <br/>
 databases with the option to also control low-level parameters.  
-![alt text](https://github.com/astro-ML/21cm-wrapper/blob/main/Leaf.jpg?raw=true)
+![alt text](https://github.com/astro-ML/21cm-wrapper/blob/main/Leaf.png?raw=true)
 
 
 <b>Quickstart</b> <br/>

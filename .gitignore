@@ -25,3 +25,7 @@ aies_lil.py
 *.png
 *.jpg
 !Leaf.png
+21mc_aies.py
+21mc_ns.py
+nancheck.py
+sim.py
