@@ -25,3 +25,11 @@ aies_lil.py
 *.png
 *.jpg
 !Leaf.png
+aies_lil.py
+conversion.py
+nancheck.py
+nantest.py
+ns.py
+sim.py
+testblub.py
+21mc*

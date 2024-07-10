@@ -54,7 +54,6 @@ class mcmc(Simulation):
         return ps
     
     def p_wrapper(self, theta, mc_parameter = None):
-        if  self.debug: print()
         mc_parameter = self.mc_params if mc_parameter is None else mc_parameter
         # 21cmfast doesn't run outside of this ranges, implement generic hard-limit check in the future
         if (theta[3] < 100) | (theta[3] > 2000):
