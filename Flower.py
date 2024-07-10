@@ -115,7 +115,7 @@ class Simulation(Leaf):
         self.debug("Current parameters are:", parameters)
         # run lightcone sim
         test_lc = self.run_lightcone(redshift=self.redshift, **parameters, make_statistics=False, 
-                           sanity_check=False, filter_peculiar=True save=False)
+                           sanity_check=False, filter_peculiar=True, save=False)
         # compute probability
         return self.Probability.log_probability(lightcone=test_lc, parameters=parameters)
         
@@ -162,4 +162,5 @@ class Flower(Simulation):
                  debug = debug, regenerate_fiducial = regenerate_fiducial, **fid_params)
         self.Prob = Probability
         
-    def run_emcee(self, )
+    def run_emcee(self,):
+        print("test")

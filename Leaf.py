@@ -28,7 +28,7 @@ class Leaf():
     def __init__(self, data_path: str = "./data/", data_prefix: str = "simrun_", parameter_file: str = None, 
                  cache_path: str = None, debug: bool = False, redshift: float = None,
                 astro_params: dict = {}, cosmo_params: dict = {}, user_params: dict = {},
-                flag_options = {}, global_params: dict = {}) -> None:
+                flag_options: dict = {}, global_params: dict = {}) -> None:
         """
         Initializes the Leaf class with specified parameters.
 
