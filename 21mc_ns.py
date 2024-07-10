@@ -1,3 +1,5 @@
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -11,19 +13,22 @@ core = p21mc.CoreLightConeModule( # All core modules are prefixed by Core* and e
     redshift = 5.5,              # Lower redshift of the lightcone
     max_redshift = 12.0,          # Approximate maximum redshift of the lightcone (will be exceeded).
     user_params = dict(
-        HII_DIM = 70,
+        HII_DIM = 90,
         BOX_LEN = 200.0,
-        PERTURB_ON_HIGH_RES = True,
+        PERTURB_ON_HIGH_RES = False,
         USE_INTERPOLATION_TABLES = False,
-        N_THREADS=1),
+        N_THREADS=2),
     flag_options = dict(
         INHOMO_RECO = True,
         USE_TS_FLUCT = True,
     ),
     cache_ionize=False,
     direc="_cache",
-    regenerate=False,
-    write=False
+    regenerate=True,
+    cache_mcmc=False,
+    cache_dir="_cache",
+    cache_ionize=False
+
 ) # For other available options, see the docstring.
 
 # Now the likelihood...
@@ -31,15 +36,15 @@ datafiles = ["data/lightcone_mcmc_ns_data_%s.npz"%i for i in range(20)]
 likelihood = p21mc.Likelihood1DPowerLightcone(  # All likelihood modules are prefixed by Likelihood*
     datafile = datafiles,        # All likelihoods have this, which specifies where to write/read data
     logk=False,                 # Should the power spectrum bins be log-spaced?
-    min_k=0,                  # Minimum k to use for likelihood
-    max_k=3.3,                  # Maximum ""
+    min_k=0.01,                  # Minimum k to use for likelihood
+    max_k=3.4,                  # Maximum ""
     nchunks = 11,                 # Number of chunks to break the lightcone into
     simulate=False
 ) # For other available options, see the docstring
 
 model_name = "LightconeTest"
 
-model_name = "LightconeTest_ns"
+#model_name = "LightconeTest_ns"
 mcmc_options = {'n_live_points': 600,               # total number of live points
                 'importance_nested_sampling': True, # do Importance Nested Sampling (INS)?
                 'sampling_efficiency': 0.8,         # 0.8 and 0.3 are recommended for parameter estimation & evidence evalutaion respectively.

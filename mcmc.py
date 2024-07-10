@@ -1,6 +1,6 @@
 from p21cmfastwrapper import *
 import emcee
-from pymultinest.solve import solve
+# from pymultinest.solve import solve
 import json
 os.environ["OMP_NUM_THREADS"] = "1"
 from schwimmbad import MPIPool

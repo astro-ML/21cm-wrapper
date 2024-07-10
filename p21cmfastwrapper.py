@@ -18,6 +18,7 @@ import h5py
 import fnmatch
 from collections.abc import Callable
 
+
 # set your cache path here
 cache_path = "./_cache"
 
@@ -92,13 +93,15 @@ class Parameters():
     def randomize(self):
         '''Shuffle random_seed'''
         if self.random_seed: self.input_params["random_seed"] = random.randint(0,99999)
-       
+
+    def give_all(self):
+       return self.input_params
     
 class Simulation(Parameters):
     '''Dynamically execute and plot simulations.'''
     def __init__(self, parameter_path="./", save_inclass = False, save_ondisk = True, 
                 write_cache=False, clean_cache=False, data_path = "./data/", file_name = "run_", override = False, 
-                 debug=False):
+                 debug=False, cut_lc = False):
         '''parameter_file (str): path to parameter.yaml
         save_inclass (bool): If set true, results are saved as a list in the class, very useful for testing and quick analysis. If False, results are saved as a file
         save_ondisk (bool): If set True, save results on disk
@@ -111,10 +114,12 @@ class Simulation(Parameters):
         super().__init__(parameter_path=parameter_path, data_path=data_path, 
                         file_name=file_name, override=override, debug=debug)
         print(f"Using 21cmFAST version {p21c.__version__}")
+        print("Using the Simulation class is depricated. Please use the Leaf class, see https://github.com/astro-ML/21cm-wrapper.")
         self.sic = save_inclass
         self.sod = save_ondisk
         self.ccache = clean_cache
         self.debug = debug
+        self.cut_lc = cut_lc
         if save_inclass: self.data = []
         self.input_params['write'] = write_cache
         
@@ -146,7 +151,7 @@ class Simulation(Parameters):
             #self.randomize()
             self.kwargs_update(kargs)
             run = p21c.run_lightcone(**self.input_params)
-            run = self.cut_lightcone(run, self.max_z)
+            if self.cut_lc: run = self.cut_lightcone(run, self.max_z)
             if self.ccache: cache_tools.clear_cache()
             if commit: return run
             if self.sic: self.data.append(run)
@@ -376,7 +381,7 @@ class Simulation(Parameters):
     @staticmethod
     def cut_lightcone(cone, z_cut):
         amidx = np.abs(cone.lightcone_redshifts - z_cut).argmin()
-        cone.brightness_temp = cone.brightness_temp[:,:,:amidx]
+        cone.brightness_temp = cone.brightness_temp[:,:,:amidx+1]
         return cone
             
     @staticmethod
@@ -402,6 +407,7 @@ class Simulation(Parameters):
         # initalize the progress bar
         for i,file in enumerate(files):
             lcone = p21c.outputs.LightCone.read(path + file)
+            if debug: print(f"load {path + file}")
             # load image
             image = lcone.brightness_temp
             # check if there are NaNs in the brightness map
@@ -458,3 +464,6 @@ class Simulation(Parameters):
         '''Clear the data/runs cache'''
         self.data.clear()
 """     
+
+
+

@@ -20,23 +20,24 @@ cosmo_params:
   ## https://21cmfast.readthedocs.io/en/latest/reference/_autosummary/inputs/py21cmfast.inputs.CosmoParams.html ##
   # use default parameters for this section
   use_default: true
-
+                "astro_params": {"HII_EFF_FACTOR":[10,250],"L_X":[38,42],"NU_X_THRESH":[100,1500],"ION_Tvir_MIN":[4.0,5.3]},
+                "cosmo_params": {"OMm":[0.2,0.4]}}
 user_params:
   ### hyperparameters for the coeval simulation call ###
   ## https://21cmfast.readthedocs.io/en/latest/reference/_autosummary/inputs/py21cmfast.inputs.UserParams.html ##
   # use default parameters for this section
   use_default: false
   # Length of the box, in Mpc. Default 300 Mpc.
-  BOX_LEN: 160
+  BOX_LEN: 200
   # Number of cells for the low-res box. Default 200.
   HII_DIM: 40
   #DIM: 280
   # Whether to perform the Zel’Dovich or 2LPT perturbation on the low or high resolution grid.
-  PERTURB_ON_HIGH_RES: true
+  PERTURB_ON_HIGH_RES: false
   # If True, calculates and evaluates quantites using interpolation tables, which is considerably faster than when performing integrals explicitly.
   USE_INTERPOLATION_TABLES: false
   NO_RNG: false
-  N_THREADS: 1
+  N_THREADS: 6
 
 flag_options:
   ### additional features which can be activated / deactivated if required ###
@@ -46,7 +47,7 @@ flag_options:
   # Whether to perform inhomogeneous recombinations. Increases the computation time.
   INHOMO_RECO: true
   # Whether to perform IGM spin temperature fluctuations (i.e. X-ray heating). Dramatically increases the computation time.
-  USE_TS_FLUCT: true
+  USE_TS_FLUCT: false
 
 global_params:
   ### global arguments for the simulation ###
