@@ -14,7 +14,7 @@ Run ```install.sh``` or alternatively follow the step-by-step guide below. <br/>
 2*) Activate the environment <br />
 ```source ./21cm-wrapper-penv/bin/activate``` <br /><br />
 3) Install the requirements <br />
-```pip install -r requirements.txt``` <br /><br />
+```pip install -r requirements.txt && pip install ./21cmFAST -e``` <br /><br />
 4) Get familiar with the wrapper by open tutorial.ipynb in your jupyter notebook <br />
   You can import the classes and load all dependencies by running <br />
 ```from Leaf import *``` <br /><br />

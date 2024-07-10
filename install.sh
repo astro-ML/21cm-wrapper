@@ -6,3 +6,4 @@ echo "Building new environment 21cm-wrapper-env..."
 python -m venv ./21cm-wrapper-env
 source ./21cm-wrapper-penv/bin/activate
 pip install -r requirements.txt
+pip install ./21cmFAST -e
