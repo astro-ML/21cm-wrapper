@@ -4,8 +4,8 @@ import os
 import logging, os
 logger = logging.getLogger('21cmFAST')
 logger.setLevel(logging.INFO)
-from py21cmfast import plotting
-from py21cmfast import cache_tools
+#from py21cmfast import plotting
+#from py21cmfast import cache_tools
 from concurrent.futures import ProcessPoolExecutor as Pool
 from concurrent.futures import as_completed
 from multiprocessing import get_context
@@ -13,7 +13,6 @@ from multiprocessing import get_context
 #import timeit
 import numpy as np
 import yaml
-#from powerbox.tools import get_power
 from schwimmbad import MPIPool
 #import h5py
 import fnmatch
@@ -23,11 +22,13 @@ from p21cmfastwrapper import Parameters
 from numpy.typing import NDArray
 from alive_progress import alive_bar
 import pickle
+# circumvent problems caused by some numpy builds messing with ProcessPoolExecuter
+os.environ["OMP_NUM_THREADS"] = "1"
 
 
 class Leaf():
     def __init__(self, data_path: str = "./data/", data_prefix: str = "simrun_", parameter_file: str = None, 
-                 cache_path: str = None, debug: bool = False, redshift: float = None,
+                 cache_path: str = None, debug: bool = False, redshift: float = None, make_statistics: bool = False,
                 astro_params: dict = {}, cosmo_params: dict = {}, user_params: dict = {},
                 flag_options: dict = {}, global_params: dict = {}) -> None:
         """
@@ -47,6 +48,8 @@ class Leaf():
             debug: If True, enables verbose output to help identify errors. Default is False.
 
             redshift: The redshift at which the simulation ends
+            
+            make_statistics: If true, save key statistics of the simulations
 
             **Parameter for 21cmFAST
         """
@@ -84,6 +87,7 @@ class Leaf():
         self.nancounter = []
         self.tau = []
         self.filtercounter = []
+        self.make_statistics = make_statistics
 
         if parameter_file is not None:
             if self.debug: print("Use parameter file.")
@@ -97,7 +101,7 @@ class Leaf():
             if self.debug: print("Parameters from parameter file successfully loaded and set.")
 
     def run_box(self, redshift: float = None, save: bool = True, random_seed: int = None, 
-                sanity_check: bool = True, make_statistics: bool = True,
+                sanity_check: bool = True,
                 astro_params: dict = None, cosmo_params: dict = None, user_params: dict = None,
                 flag_options: dict = None, global_params: dict = None,
                 run_id: int = 0) -> object | None:
@@ -111,8 +115,6 @@ class Leaf():
             random_seed: Pass a random seed to the simulator, if none it will be chosen randomly
 
             sanity_check: Corrects for NaNs (NN-interpolation)
-
-            make_statistics: If True, saves interesting statistics about the box
 
             **params: Current parameters for the simulation
         '''
@@ -140,7 +142,7 @@ class Leaf():
                 return run
             
     def run_lightcone(self, redshift: float = None, save: bool = True, random_seed: int = None, 
-                sanity_check: bool = True, make_statistics: bool = False, filter_peculiar: bool = True,
+                sanity_check: bool = True, filter_peculiar: bool = True,
                 astro_params: dict = {}, cosmo_params: dict = {}, user_params: dict = {},
                 flag_options: dict = {}, global_params: dict = {},
                 run_id: int = 0) -> object | None:
@@ -154,8 +156,6 @@ class Leaf():
             random_seed: Pass a random seed to the simulator, if none it will be chosen randomly
 
             sanity_check: Corrects for NaNs (NN-interpolation)
-
-            make_statistics: If True, saves interesting statistics about the box
 
             filter_peculiar: see function lc_filter
 
@@ -181,15 +181,13 @@ class Leaf():
             if sanity_check:
                 run.brightness_temp = self.nan_adversary(run.brightness_temp, run_id)
             self.debug("Sanity check passed. Write statistics...")
-            if make_statistics or filter_peculiar:
+            if self.make_statistics or filter_peculiar:
                 tau = p21c.compute_tau(redshifts=run.node_redshifts[::-1],
                                      global_xHI=run.global_xH[::-1])
-            if make_statistics:
-                # compute tau   
                 self.tau.append(tau)
             self.debug("Statistics written. Do filtering...")
             if filter_peculiar:    
-                if not self.lc_filter(tau = self.tau[-1], gxH0=run.global_xH[-1], make_statistics=make_statistics, run_id=run_id):
+                if not self.lc_filter(tau = self.tau[-1], gxH0=run.global_xH[-1], run_id=run_id):
                     return
             self.debug("Filtering passed. Save or return file now.")
             if save:
@@ -199,7 +197,7 @@ class Leaf():
             
 
     def run_lcsampling(self, samplef: Callable, redshift: float = None, save: bool = True, random_seed: int = None, 
-                sanity_check: bool = True, make_statistics: bool = True, filter_peculiar: bool = True,
+                sanity_check: bool = True, filter_peculiar: bool = True,
                 override: bool = False, threads: int = 1, mpi: bool = False, quantity: int = 1,
                 astro_params_range: dict = {}, cosmo_params_range: dict = {}, user_params_range: dict = {},
                 flag_options_range = {}, global_params_range: dict = {}) -> None:
@@ -213,8 +211,6 @@ class Leaf():
             random_seed (int): Pass a random seed to the simulator, if none it will be chosen randomly
 
             sanity_check (bool): Corrects for NaNs (NN-interpolation)
-
-            make_statistics (bool): If True, saves interesting statistics about the box
 
             filter_peculiar (bool): see lc_filter
 
@@ -239,7 +235,7 @@ class Leaf():
         #for run_ids in Leaf.generate_run_ids(quantity=quantity, threads=quantity, offset=offset): <- is Generator hence cannot be pickled (I hate my life)
             # define the parameters
         runner = [{"redshift":redshift, "save":save, "random_seed":random_seed,
-                                    "sanity_check":sanity_check, "make_statistics":make_statistics,
+                                    "sanity_check":sanity_check,
                                     "filter_peculiar":filter_peculiar, 
                                     "astro_params":self.generate_range(astro_params_range, samplef),
                                     "cosmo_params":self.generate_range(cosmo_params_range, samplef),
@@ -256,7 +252,7 @@ class Leaf():
         with schwimmhalle as p:
             p.map(self.run_multilc, runner)
 
-        if make_statistics:
+        if self.make_statistics:
             np.save(self.data_path + "statistics.npy", {
                 "nancounter": self.nancounter,
                 "tau": self.tau,
@@ -331,12 +327,12 @@ class Leaf():
         self.debug(f"Load {path_to_obj} from disk...")
         return p21c.outputs.LightCone.read(path_to_obj) if lightcone else p21c.outputs.Coeval.read(path_to_obj)
 
-    def lc_filter(self, tau: float, gxH0: float, make_statistics: bool, run_id: int) -> bool:
+    def lc_filter(self, tau: float, gxH0: float, run_id: int) -> bool:
         '''Apply tau and global nvalueeutral fraction at z=5 (gxH[0]) filters according to 
         https://github.com/astro-ML/3D-21cmPIE-Net/blob/main/simulations/runSimulations.py'''
         if tau>0.089 or gxH0>0.1: 
             self.debug("Lightcone rejected." + f" {tau=} " + f" {gxH0=} ")
-            if make_statistics:
+            if self.make_statistics:
                 self.filtercounter.append({
                     "run_id": run_id,
                     "astro_params": self.astroparams.defining_dict,
