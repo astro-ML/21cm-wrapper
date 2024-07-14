@@ -29,5 +29,5 @@ cosmo_params_range = {"OMm":[0.2,0.4]}
 
 
 if __name__ == '__main__':
-    sim.run_lcsampling(samplef=sim.uniform, redshift=5.5, save=True, threads=28, quantity=2000,
+    sim.run_lcsampling(samplef=sim.uniform, redshift=5, save=True, threads=28, quantity=10000,
                     astro_params_range=astro_params_range, cosmo_params_range=cosmo_params_range)
