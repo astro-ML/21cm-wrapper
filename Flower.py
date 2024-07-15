@@ -2,6 +2,10 @@ from Leaf import *
 from powerbox.tools import get_power
 import emcee
 import dynesty
+my_module_path = os.path.join("./", '21cm-PS')
+sys.path.append(my_module_path)
+from power_spectra import PowerSpectrum
+from data_processing import DataProcessor
 
 
 class KeyMismatchError(Exception):
@@ -16,6 +20,7 @@ class Probability:
         bins: int,
         debug: bool = True,
         fmodel_path: str = "./mcmc_data/fiducial_cone.npy",
+        summary_statistics: str = "1dps"
     ):
         """Stores the likelihood, priors and the summary statistics"""
         self.dodebug = debug
@@ -23,6 +28,10 @@ class Probability:
         self.bins = bins
         self.fmodel_path = fmodel_path
         self.prior_ranges = prior_ranges
+        self.ps = PowerSpectrum()
+        self.ps.data = DataProcessor()
+        self.sum_stat = summary_statistics
+
 
         def replace_lists_with_zero(d):
             if isinstance(d, dict):
@@ -33,18 +42,29 @@ class Probability:
                 return d
 
         self.parameter = replace_lists_with_zero(prior_ranges.copy())
+        
+    def summary_statistics(self, lightcone: object):
+        match self.sum_stat:
+            case "1dps":
+                return self.ps1d(lightcone)
+            case "2dps":
+                return self.ps2d(lightcone)
+            case _:
+                print("Summary statistics not found")
+            
 
     def log_probability(self, parameters, lightcone):
-        prob = np.log(self.likelihood(lightcone=lightcone)) + self.log_prior_emcee(parameters=parameters)
+        prob = - np.log(self.likelihood(lightcone=lightcone)) + self.log_prior_emcee(parameters=parameters)
         self.debug(f"Probability is {prob}")
         return prob
 
     def likelihood(self, lightcone: object):
         """Likelihood has lightcone object as input and outputs the likelihood"""
-        fid_ps = np.load(self.fmodel_path)[:, 0, :]
-        test_ps = self.ps1d(lightcone=lightcone)[:, 0, :]
+        fid_ps = np.load(self.fmodel_path)
+        test_ps = self.summary_statistics(lightcone=lightcone)
         chi2 = self.loss(test_lc=test_ps, fiducial_lc=fid_ps)
         self.debug(f"Likelihood={chi2}")
+        self.debug(f"LogLikelihood={np.log(chi2)}")
         return chi2
 
     # def prior_ns(self, parameter: list):
@@ -83,8 +103,17 @@ class Probability:
         return 0 if res else - np.inf
 
     def loss(self, test_lc, fiducial_lc):
+        print("computing loss")
         loss = np.sum( (test_lc - fiducial_lc)**2 / (np.abs(fiducial_lc) + 1))
-        return - loss
+        return loss if loss > 0 else 1
+    
+    def prior_dynasty(self, parameters: NDArray) -> NDArray:
+        parameter_ranges = np.array(extract_values(self.prior_ranges))
+        parameters *= np.diff(parameter_ranges)[:,0]
+        parameters += parameter_ranges[:,0] 
+        self.debug("Prior: " + str(parameters))
+        return parameters
+        
 
     def ps1d(self, lightcone: object):
         """Compute 1D PS"""
@@ -96,10 +125,13 @@ class Probability:
         else:
             self.debug("Compute 1D PS using list chunks")
             zbins = self.chunks
-        ps = np.empty((len(zbins), 2, self.bins))
+        if type(self.bins) == int:
+            ps = np.empty((len(zbins)-1, self.bins))
+        else:
+            ps = np.empty((len(zbins)-1, len(self.bins)-1))
         for bin in range(len(zbins) - 1):
             # get variance=False for now until nice usecase is found
-            ps[bin, :, :] = get_power(
+            ps[bin, :], k = get_power(
                 deltax=lightcone.brightness_temp[:, :, zbins[bin] : zbins[bin + 1]],
                 boxlength=lightcone.cell_size
                 * np.array(
@@ -111,12 +143,37 @@ class Probability:
                 bins=self.bins,
                 vol_normalised_power=True,
             )
-            ps[bin, 0, :] *= ps[bin, 1, :] ** 3 / (2 * np.pi**2)
+            ps[bin, 0, :] *= k ** 3 
             self.debug(
-                f"PS is {ps[bin,0,:]}" + f" for bin {bin}" + f"\nfor ks {ps[bin,1,:]}"
+                f"PS is {ps[bin,0,:]}" + f" for bin {bin}" + f"\nfor ks {k}"
             )
         return ps
-
+    
+    def ps2d(self, lightcone: object):
+        """Compute 2D PS"""
+        if type(self.chunks) == int:
+            self.debug("Compute 2D PS using int chunks")
+            zbins = np.linspace(
+                0, lightcone.lightcone_redshifts.shape[0] - 1, self.chunks + 1
+            ).astype(int)
+        else:
+            self.debug("Compute 2D PS using list chunks")
+            zbins = self.chunks
+        if type(self.bins) == int:
+            ps = np.empty((len(zbins)-1, self.bins, self.bins))
+        else:
+            ps = np.empty((len(zbins)-1, len(self.bins), len(self.bins)))
+        for bin in range(len(zbins) - 1):
+            # get variance=False for now until nice usecase is found
+            field = lightcone.brightness_temp[:,:,zbins[bin]:zbins[bin+1]]
+            k_perp, k_par, ps[bin, :, :] = self.ps.compute_2D_PS(field = field, 
+                                                  k_perp_bins=self.bins, 
+                                                  k_par_bins=self.bins, BOX_LEN=200)
+            self.debug(
+                f"PS is {ps[bin,:,:]}" + f" in {bin} for k_perp {k_perp}" + f"\nfor k_par {k_par}"
+            )
+        return ps
+    
     def debug(self, msg):
         if self.dodebug:
             print(msg)
@@ -186,7 +243,7 @@ class Simulation(Leaf):
                 os.remove(data_path + "fiducial_ps.npy")
 
             # 1dps hardcoded change to generic summary statistic in the future
-            self.fiducial_ps = Probability.ps1d(fiducial_cone)
+            self.fiducial_ps = self.Probability.summary_statistics(fiducial_cone)
             np.save(data_path + "fiducial_ps.npy", self.fiducial_ps)
             if debug:
                 print("PS is ", self.fiducial_ps)
@@ -300,7 +357,7 @@ class Flower(Simulation):
         nsteps: int = 1000,
     ) -> None:
         self.debug("Starting emcee sampling...")
-        ndim = self.num_elements(self.Prob.prior_ranges)
+        ndim = num_elements(self.Prob.prior_ranges)
         self.debug("Number of parameters: " + str(ndim))
         backend = emcee.backends.HDFBackend(filename=filename)
         initial = self.initialize_parameter((walkers, ndim))
@@ -322,7 +379,23 @@ class Flower(Simulation):
         initial_params = np.empty((shape))
         # print(self.Prob.prior_ranges, self.uniform)
         for i in range(shape[0]):
-            initial_params[i, :] = self.extract_values(
-                self.generate_range(self.Prob.prior_ranges, self.uniform)
+            initial_params[i, :] = extract_values(
+                generate_range(self.Prob.prior_ranges, self.uniform)
             )
         return initial_params
+    
+    def run_ns(self, filename: str = "./results_dynasty", threads: int = 1, npoints: int = 250, **dynasty_params):
+        self.debug("Starting nested sampling...")
+        ndim = num_elements(self.Prob.prior_ranges)
+        self.debug("Number of parameters: " + str(ndim))
+        schwimmhalle = Pool(
+            max_workers=threads, max_tasks_per_child=1, mp_context=get_context("spawn")
+        )
+        with schwimmhalle as p:
+            sampler = dynesty.NestedSampler(loglikelihood=self.step, 
+                                        prior_transform=self.Probability.prior_dynasty, 
+                                        ndim=ndim, nlive = npoints, bound='balls',
+                                        pool=p, queue_size = threads) 
+            sampler.run_nested(dlogz=0.5, checkpoint_file=filename)
+
+        

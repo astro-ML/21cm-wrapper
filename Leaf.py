@@ -1,7 +1,6 @@
 import py21cmfast as p21c
 from matplotlib import pyplot as plt
-import os
-import logging, os
+import logging, os, sys
 
 logger = logging.getLogger("21cmFAST")
 logger.setLevel(logging.INFO)
@@ -350,11 +349,11 @@ class Leaf:
                 "random_seed": random_seed,
                 "sanity_check": sanity_check,
                 "filter_peculiar": filter_peculiar,
-                "astro_params": self.generate_range(astro_params_range, samplef),
-                "cosmo_params": self.generate_range(cosmo_params_range, samplef),
-                "user_params": self.generate_range(user_params_range, samplef),
-                "flag_options": self.generate_range(flag_options_range, samplef),
-                "global_params": self.generate_range(global_params_range, samplef),
+                "astro_params": generate_range(astro_params_range, samplef),
+                "cosmo_params": generate_range(cosmo_params_range, samplef),
+                "user_params": generate_range(user_params_range, samplef),
+                "flag_options": generate_range(flag_options_range, samplef),
+                "global_params": generate_range(global_params_range, samplef),
                 "run_id": run_id,
             }
             for run_id in run_ids
@@ -453,7 +452,7 @@ class Leaf:
             return bt_cone
 
     def save(self, obj: object, fname: str, direc: str, run_id: int | str) -> None:
-        self.debug(f"Save {run_id} to disk...")
+        self.debug(f"Save {fname + run_id} to disk...")
         obj.save(fname=fname + str(run_id) + ".h5", direc=direc)
 
     def load(self, path_to_obj: str, lightcone: bool) -> object:
@@ -483,59 +482,6 @@ class Leaf:
             return False
         else:
             return True
-
-    ### Utility functions ###
-
-    def generate_range(self, nested_dict: dict, func: Callable) -> dict:
-        """Helper function which updates every values in a nested dict such that the values [a,b] -> func(*[a,b])"""
-        if nested_dict is None:
-            return None
-        res = {}
-        for key, value in nested_dict.items():
-            if isinstance(value, dict):
-                res[key] = self.generate_range(value, func)
-            else:
-                res[key] = func(*value)
-        return res
-
-    def fill_dict(self, nested_dict: dict, array: NDArray, index: int = 0) -> dict:
-        """Helper function to recursively fill a dict given an array"""
-        for key in nested_dict:
-            if isinstance(nested_dict[key], dict):
-                index = self.fill_dict(nested_dict[key], array, index)
-            else:
-                if index < len(array):
-                    nested_dict[key] = array[index]
-                    index += 1
-                else:
-                    break
-        return nested_dict
-
-    def num_elements(self, x: dict) -> int:
-        """Helper function to recursively count the elements in a nested dict"""
-        if isinstance(x, dict):
-            return sum([self.num_elements(_x) for _x in x.values()])
-        else:
-            return 1
-
-    def extract_values(self, nested_dict: dict) -> list[float]:
-        """Helper function to recursively extract all values from a nested dict"""
-        values = []
-        for key in nested_dict:
-            if isinstance(nested_dict[key], dict):
-                values.extend(self.extract_values(nested_dict[key]))
-            else:
-                values.append(nested_dict[key])
-        return values
-
-    def extract_keys(self, nested_dict: dict) -> list[str]:
-        """Helper function to recursively extract all keys from a nested dict"""
-        keys = []
-        for key in nested_dict:
-            keys.append(key)
-            if isinstance(nested_dict[key], dict):
-                keys.extend(self.extract_keys(nested_dict[key]))
-        return keys
 
     @staticmethod
     def generate_run_ids(
@@ -704,3 +650,59 @@ class Parameters:
 
     def give_all(self):
         return self.input_params
+
+
+
+### Utility funcitons ###
+
+
+def generate_range(nested_dict: dict, func: Callable) -> dict:
+    """Helper function which updates every values in a nested dict such that the values [a,b] -> func(*[a,b])"""
+    if nested_dict is None:
+        return None
+    res = {}
+    for key, value in nested_dict.items():
+        if isinstance(value, dict):
+            res[key] = generate_range(value, func)
+        else:
+            res[key] = func(*value)
+    return res
+
+def fill_dict(nested_dict: dict, array: NDArray, index: int = 0) -> dict:
+    """Helper function to recursively fill a dict given an array"""
+    for key in nested_dict:
+        if isinstance(nested_dict[key], dict):
+            index = fill_dict(nested_dict[key], array, index)
+        else:
+            if index < len(array):
+                nested_dict[key] = array[index]
+                index += 1
+            else:
+                break
+    return nested_dict
+
+def num_elements(x: dict) -> int:
+    """Helper function to recursively count the elements in a nested dict"""
+    if isinstance(x, dict):
+        return sum([num_elements(_x) for _x in x.values()])
+    else:
+        return 1
+
+def extract_values(nested_dict: dict) -> list[float]:
+    """Helper function to recursively extract all values from a nested dict"""
+    values = []
+    for key in nested_dict:
+        if isinstance(nested_dict[key], dict):
+            values.extend(extract_values(nested_dict[key]))
+        else:
+            values.append(nested_dict[key])
+    return values
+
+def extract_keys(nested_dict: dict) -> list[str]:
+    """Helper function to recursively extract all keys from a nested dict"""
+    keys = []
+    for key in nested_dict:
+        keys.append(key)
+        if isinstance(nested_dict[key], dict):
+            keys.extend(extract_keys(nested_dict[key]))
+    return keys
