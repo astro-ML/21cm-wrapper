@@ -29,3 +29,6 @@ aies_lil.py
 21mc_ns.py
 nancheck.py
 sim.py
+p21cmfastwrapper.py
+*.ipynb
+!tutorial.ipynb
