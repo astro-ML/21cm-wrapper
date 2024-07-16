@@ -143,9 +143,9 @@ class Probability:
                 bins=self.bins,
                 vol_normalised_power=True,
             )
-            ps[bin, 0, :] *= k ** 3 
+            ps[bin, :] *= k ** 3 
             self.debug(
-                f"PS is {ps[bin,0,:]}" + f" for bin {bin}" + f"\nfor ks {k}"
+                f"PS is {ps[bin,:]}" + f" for bin {bin}" + f"\nfor ks {k}"
             )
         return ps
     
@@ -254,6 +254,8 @@ class Simulation(Leaf):
         # convert parameter list to dict
         parameters = Simulation.replace_values(self.Probability.parameter, parameters)
         self.debug("Current parameters are:" + str(parameters))
+        if not self.Probability.prior_emcee(parameters):
+            return - np.inf
         # run lightcone sim
         test_lc = self.run_lightcone(
             redshift=self.redshift,
@@ -359,7 +361,7 @@ class Flower(Simulation):
         self.debug("Starting emcee sampling...")
         ndim = num_elements(self.Prob.prior_ranges)
         self.debug("Number of parameters: " + str(ndim))
-        backend = emcee.backends.HDFBackend(filename=filename)
+        backend = emcee.backends.HDFBackend(filename=self.data_path + filename)
         initial = self.initialize_parameter((walkers, ndim))
         self.debug("Initial parameters: " + str(initial))
         schwimmhalle = Pool(
@@ -396,6 +398,6 @@ class Flower(Simulation):
                                         prior_transform=self.Probability.prior_dynasty, 
                                         ndim=ndim, nlive = npoints, bound='balls',
                                         pool=p, queue_size = threads) 
-            sampler.run_nested(dlogz=0.5, checkpoint_file=filename)
+            sampler.run_nested(dlogz=0.5, checkpoint_file=self.data_path + filename)
 
         
