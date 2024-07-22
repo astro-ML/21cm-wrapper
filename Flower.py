@@ -78,7 +78,7 @@ class Probability:
         Returns:
             float: The log probability.
         """
-        prob = - np.log(self.likelihood(lightcone=lightcone)) + self.log_prior_emcee(parameters=parameters)
+        prob = self.likelihood(lightcone=lightcone) + self.log_prior_emcee(parameters=parameters)
         self.debug(f"Probability is {prob}")
         return prob
 
@@ -96,7 +96,7 @@ class Probability:
         chi2 = self.loss(test_lc=test_ps, fiducial_lc=fid_ps)
         self.debug(f"Likelihood={chi2}")
         self.debug(f"LogLikelihood={np.log(chi2)}")
-        return chi2
+        return - chi2
 
     # def prior_ns(self, parameter: list):
 
@@ -161,7 +161,7 @@ class Probability:
         """
         print("computing loss")
         loss = np.sum( (test_lc - fiducial_lc)**2 / (np.abs(fiducial_lc) + 1))
-        return loss if loss > 0 else 1
+        return loss
 
     def prior_dynasty(self, parameters: NDArray) -> NDArray:
         """Compute the prior probability using the Dynasty sampler.
@@ -204,9 +204,7 @@ class Probability:
             ps[bin, :], k = get_power(
                 deltax=lightcone.brightness_temp[:, :, zbins[bin] : zbins[bin + 1]],
                 boxlength=lightcone.cell_size
-                * np.array(
-                    [*lightcone.brightness_temp.shape[:2], zbins[bin + 1] - zbins[bin]]
-                ),
+                * np.asarray(lightcone.brightness_temp.shape),
                 bin_ave=True,
                 ignore_zero_mode=True,
                 get_variance=False,
