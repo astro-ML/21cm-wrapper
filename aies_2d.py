@@ -41,11 +41,14 @@ fiducial_parameter = {
 }
 
 if __name__ == '__main__':
+    
+    bins = np.linspace(0.05, 3, 15)
 
-    probability = Probability(prior_ranges=prior_ranges, z_chunks=20, bins=15, debug=True, 
-                            fmodel_path="./ns_data/fiducial_ps.npy")
+    probability = Probability(prior_ranges=prior_ranges, z_chunks=20, bins=bins, debug=False, 
+                            fmodel_path="./emcee_data_2d/fiducial_ps.npy", summary_statistics='2dps')
 
-    ns = Flower(Probability=probability, redshift=5, data_path="./ns_data/", noise_type=None,
-                        regenerate_fiducial=False, fid_params=fiducial_parameter, debug=True)
+    aies = Flower(Probability=probability, redshift=5, data_path="./emcee_data_2d/", noise_type=None,
+                        regenerate_fiducial=False, fid_params=fiducial_parameter, debug=False)
 
-    ns.run_ns(threads=1)
+
+    aies.run_emcee(threads=14, walkers = 56)

@@ -414,10 +414,10 @@ class Leaf:
         x_dim, y_dim, z_dim = bt_cone.shape
         if nans.any():
             self.debug(
-                "NaN(s) encountered at ",
-                run_id,
-                " count: ",
-                len(np.where(nans == True)[0]),
+                "NaN(s) encountered at " +
+                str(run_id) +
+                " count: " +
+                str(len(np.where(nans == True)[0]))
             )
             self.nancounter.append(
                 {
