@@ -207,6 +207,7 @@ class Leaf:
         user_params: dict = {},
         flag_options: dict = {},
         global_params: dict = {},
+        fields: list = ["brightness_temp", "density", "xH_box"],
         run_id: int = 0,
     ) -> object | None:
         """Run a coevel box of 21cmFAST given the parameters.
@@ -260,6 +261,7 @@ class Leaf:
                 flag_options=self.flagparams,
                 random_seed=random_seed,
                 write=self.write_cache,
+                lightcone_quantities=fields,
             )
             self.debug("Done simulating. Do sanity check...")
             if sanity_check:

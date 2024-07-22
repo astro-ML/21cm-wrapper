@@ -32,3 +32,4 @@ sim.py
 p21cmfastwrapper.py
 *.ipynb
 !tutorial.ipynb
+*.log

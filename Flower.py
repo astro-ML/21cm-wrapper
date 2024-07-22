@@ -22,7 +22,16 @@ class Probability:
         fmodel_path: str = "./mcmc_data/fiducial_cone.npy",
         summary_statistics: str = "1dps"
     ):
-        """Stores the likelihood, priors and the summary statistics"""
+        """Stores the likelihood, priors and the summary statistics
+
+        Args:
+            prior_ranges (dict): A dictionary containing the prior ranges for the parameters.
+            z_chunks (int | list[int]): The number of chunks or a list of chunk indices for computing the power spectrum.
+            bins (int): The number of bins for the power spectrum.
+            debug (bool, optional): Whether to enable debug mode. Defaults to True.
+            fmodel_path (str, optional): The path to the fiducial model. Defaults to "./mcmc_data/fiducial_cone.npy".
+            summary_statistics (str, optional): The type of summary statistics to compute. Defaults to "1dps".
+        """
         self.dodebug = debug
         self.chunks = z_chunks
         self.bins = bins
@@ -31,7 +40,6 @@ class Probability:
         self.ps = PowerSpectrum()
         self.ps.data = DataProcessor()
         self.sum_stat = summary_statistics
-
 
         def replace_lists_with_zero(d):
             if isinstance(d, dict):
@@ -42,8 +50,16 @@ class Probability:
                 return d
 
         self.parameter = replace_lists_with_zero(prior_ranges.copy())
-        
+
     def summary_statistics(self, lightcone: object):
+        """Compute the summary statistics based on the specified type.
+
+        Args:
+            lightcone (object): The lightcone object.
+
+        Returns:
+            object: The computed summary statistics.
+        """
         match self.sum_stat:
             case "1dps":
                 return self.ps1d(lightcone)
@@ -51,15 +67,30 @@ class Probability:
                 return self.ps2d(lightcone)
             case _:
                 print("Summary statistics not found")
-            
 
     def log_probability(self, parameters, lightcone):
+        """Compute the log probability.
+
+        Args:
+            parameters: The parameters.
+            lightcone: The lightcone object.
+
+        Returns:
+            float: The log probability.
+        """
         prob = - np.log(self.likelihood(lightcone=lightcone)) + self.log_prior_emcee(parameters=parameters)
         self.debug(f"Probability is {prob}")
         return prob
 
     def likelihood(self, lightcone: object):
-        """Likelihood has lightcone object as input and outputs the likelihood"""
+        """Compute the likelihood.
+
+        Args:
+            lightcone (object): The lightcone object.
+
+        Returns:
+            float: The likelihood.
+        """
         fid_ps = np.load(self.fmodel_path)
         test_ps = self.summary_statistics(lightcone=lightcone)
         chi2 = self.loss(test_lc=test_ps, fiducial_lc=fid_ps)
@@ -70,6 +101,14 @@ class Probability:
     # def prior_ns(self, parameter: list):
 
     def prior_emcee(self, parameters: dict):
+        """Compute the prior probability using the emcee sampler.
+
+        Args:
+            parameters (dict): The parameters.
+
+        Returns:
+            int: The prior probability.
+        """
         dict1 = parameters
         dict2 = self.prior_ranges
 
@@ -99,24 +138,55 @@ class Probability:
         return result
 
     def log_prior_emcee(self, parameters: dict):
+        """Compute the log prior probability using the emcee sampler.
+
+        Args:
+            parameters (dict): The parameters.
+
+        Returns:
+            float: The log prior probability.
+        """
         res = self.prior_emcee(parameters)
         return 0 if res else - np.inf
 
     def loss(self, test_lc, fiducial_lc):
+        """Compute the loss function.
+
+        Args:
+            test_lc: The test lightcone.
+            fiducial_lc: The fiducial lightcone.
+
+        Returns:
+            float: The loss value.
+        """
         print("computing loss")
         loss = np.sum( (test_lc - fiducial_lc)**2 / (np.abs(fiducial_lc) + 1))
         return loss if loss > 0 else 1
-    
+
     def prior_dynasty(self, parameters: NDArray) -> NDArray:
+        """Compute the prior probability using the Dynasty sampler.
+
+        Args:
+            parameters (NDArray): The parameters.
+
+        Returns:
+            NDArray: The prior probability.
+        """
         parameter_ranges = np.array(extract_values(self.prior_ranges))
         parameters *= np.diff(parameter_ranges)[:,0]
         parameters += parameter_ranges[:,0] 
         self.debug("Prior: " + str(parameters))
         return parameters
-        
 
     def ps1d(self, lightcone: object):
-        """Compute 1D PS"""
+        """Compute the 1D power spectrum.
+
+        Args:
+            lightcone (object): The lightcone object.
+
+        Returns:
+            object: The computed 1D power spectrum.
+        """
         if type(self.chunks) == int:
             self.debug("Compute 1D PS using int chunks")
             zbins = np.linspace(
@@ -148,9 +218,16 @@ class Probability:
                 f"PS is {ps[bin,0,:]}" + f" for bin {bin}" + f"\nfor ks {k}"
             )
         return ps
-    
+
     def ps2d(self, lightcone: object):
-        """Compute 2D PS"""
+        """Compute the 2D power spectrum.
+
+        Args:
+            lightcone (object): The lightcone object.
+
+        Returns:
+            object: The computed 2D power spectrum.
+        """
         if type(self.chunks) == int:
             self.debug("Compute 2D PS using int chunks")
             zbins = np.linspace(
@@ -166,15 +243,37 @@ class Probability:
         for bin in range(len(zbins) - 1):
             # get variance=False for now until nice usecase is found
             field = lightcone.brightness_temp[:,:,zbins[bin]:zbins[bin+1]]
-            k_perp, k_par, ps[bin, :, :] = self.ps.compute_2D_PS(field = field, 
-                                                  k_perp_bins=self.bins, 
-                                                  k_par_bins=self.bins, BOX_LEN=200)
+            k_perp, k_par, ps[bin, :, :] = self.compute_ps2d(field, lightcone.cell_size*field.shape)
             self.debug(
                 f"PS is {ps[bin,:,:]}" + f" in {bin} for k_perp {k_perp}" + f"\nfor k_par {k_par}"
             )
         return ps
-    
+
+    def compute_ps2d(self, data, size):
+        """Compute the 2D power spectrum.
+
+        Args:
+            data: The data.
+            size: The size of the data.
+
+        Returns:
+            tuple: The k_perp, k_par, and the computed 2D power spectrum.
+        """
+        ps_perp,k_perp, _ = get_power(data, boxlength=size, res_ndim=2, bins = self.bins, 
+                                    ignore_zero_mode=False, bin_ave=True) 
+        ps_par, k_par, _ = get_power(data.T, boxlength=size, res_ndim=1, bins = self.bins, 
+                                    ignore_zero_mode=False, bin_ave=True)
+        ps_perp = np.mean(ps_perp,axis=1)
+        ps_par = np.mean(ps_par, axis=(1,2))
+        ps = np.outer(ps_perp*k_perp**2, ps_par*k_par).T
+        return k_perp, k_par, ps
+
     def debug(self, msg):
+        """Print the debug message.
+
+        Args:
+            msg: The debug message.
+        """
         if self.dodebug:
             print(msg)
 
@@ -190,7 +289,21 @@ class Simulation(Leaf):
         regenerate_fiducial: bool = True,
         **fid_params,
     ):
-        """Stores everything related to the simulation like the fiducical model or noise"""
+        """
+        Initializes a Simulation object.
+
+        Args:
+            Probability (Probability): The probability object used for computing the log probability.
+            redshift (float): The redshift value for the simulation.
+            data_path (str, optional): The path to the data directory. Defaults to "./mcmc_data/".
+            noise_type (tuple, optional): The type of noise to apply to the simulation. Defaults to None.
+            debug (bool, optional): Whether to enable debug mode. Defaults to False.
+            regenerate_fiducial (bool, optional): Whether to regenerate the fiducial lightcone. Defaults to True.
+            **fid_params: Additional parameters for the fiducial model.
+
+        Raises:
+            ValueError: If the number of values in the dictionary does not match the length of values_array.
+        """
         # initialize lightcones with fid_params
         super().__init__(data_path=data_path, debug=debug, **fid_params)
         self.debug("initialize Simulation class...")
@@ -251,6 +364,18 @@ class Simulation(Leaf):
                 print("New summary statistics successfully computed and saved.")
 
     def step(self, parameters: list[float]) -> float:
+        """
+        Performs a simulation step.
+
+        Args:
+            parameters (list[float]): The list of parameters for the simulation.
+
+        Returns:
+            float: The log probability of the simulation.
+
+        Raises:
+            ValueError: If the number of values in the dictionary does not match the length of values_array.
+        """
         # convert parameter list to dict
         parameters = Simulation.replace_values(self.Probability.parameter, parameters)
         self.debug("Current parameters are:" + str(parameters))
@@ -279,19 +404,35 @@ class Simulation(Leaf):
 
     @staticmethod
     def gaussian_noise(data: NDArray, mu: float, sigma: float) -> NDArray:
+        """
+        Adds Gaussian noise to the data.
+
+        Args:
+            data (NDArray): The input data.
+            mu (float): The mean of the Gaussian distribution.
+            sigma (float): The standard deviation of the Gaussian distribution.
+
+        Returns:
+            NDArray: The data with added Gaussian noise.
+        """
         return data + np.random.normal(mu, sigma, data.shape)
 
     @staticmethod
     def replace_values(nested_dict, values_array):
-        values_array = list(values_array)
         """
         Replace all values in the nested dictionary with the elements of the values_array in order.
-        
-        :param nested_dict: A dictionary which may contain other dictionaries as values.
-        :param values_array: A list of values to replace in the nested dictionary.
-        :return: A new dictionary with replaced values.
-        :raises ValueError: If the number of values in the dictionary does not match the length of values_array.
+
+        Args:
+            nested_dict: A dictionary which may contain other dictionaries as values.
+            values_array: A list of values to replace in the nested dictionary.
+
+        Returns:
+            A new dictionary with replaced values.
+
+        Raises:
+            ValueError: If the number of values in the dictionary does not match the length of values_array.
         """
+        values_array = list(values_array)
 
         def count_values(d):
             """Recursively count the total number of values in the nested dictionary."""
@@ -334,9 +475,16 @@ class Flower(Simulation):
         fid_params: dict = {},
     ):
         """
-        noise_type: None - no noise; syntax: (noise_type, **kwargs for noise)
-                    list of noise_tupes:
-                    (1, mu, sig) for guassian noise
+        A class representing a flower simulation.
+
+        Args:
+            Probability (Probability): An instance of the Probability class.
+            data_path (str, optional): The path to the data directory. Defaults to "./mcmc_data/".
+            noise_type (tuple, optional): The type of noise. Defaults to None.
+            debug (bool, optional): Flag to enable debug mode. Defaults to False.
+            regenerate_fiducial (bool, optional): Flag to regenerate fiducial parameters. Defaults to True.
+            redshift (float, optional): The redshift value. Defaults to 5.5.
+            fid_params (dict, optional): Additional fiducial parameters. Defaults to {}.
         """
         super().__init__(
             Probability=Probability,
@@ -356,6 +504,15 @@ class Flower(Simulation):
         walkers: int = 12,
         nsteps: int = 1000,
     ) -> None:
+        """
+        Run the emcee sampling.
+
+        Args:
+            filename (str, optional): The filename to save the results. Defaults to "./results_emcee.h5".
+            threads (int, optional): The number of threads to use. Defaults to 1.
+            walkers (int, optional): The number of walkers. Defaults to 12.
+            nsteps (int, optional): The number of steps. Defaults to 1000.
+        """
         self.debug("Starting emcee sampling...")
         ndim = num_elements(self.Prob.prior_ranges)
         self.debug("Number of parameters: " + str(ndim))
@@ -376,6 +533,15 @@ class Flower(Simulation):
             sampler.run_mcmc(initial_state=initial, nsteps=nsteps, progress=True)
 
     def initialize_parameter(self, shape: tuple[int, int]):
+        """
+        Initialize the parameters.
+
+        Args:
+            shape (tuple[int, int]): The shape of the parameters.
+
+        Returns:
+            np.ndarray: The initialized parameters.
+        """
         initial_params = np.empty((shape))
         # print(self.Prob.prior_ranges, self.uniform)
         for i in range(shape[0]):
@@ -385,6 +551,15 @@ class Flower(Simulation):
         return initial_params
     
     def run_ns(self, filename: str = "./results_dynasty", threads: int = 1, npoints: int = 250, **dynasty_params):
+        """
+        Run the nested sampling.
+
+        Args:
+            filename (str, optional): The filename to save the results. Defaults to "./results_dynasty".
+            threads (int, optional): The number of threads to use. Defaults to 1.
+            npoints (int, optional): The number of live points. Defaults to 250.
+            **dynasty_params: Additional parameters for the nested sampling algorithm.
+        """
         self.debug("Starting nested sampling...")
         ndim = num_elements(self.Prob.prior_ranges)
         self.debug("Number of parameters: " + str(ndim))
