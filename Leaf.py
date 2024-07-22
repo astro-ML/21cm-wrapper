@@ -20,7 +20,6 @@ from schwimmbad import MPIPool
 import fnmatch
 from collections.abc import Callable
 from typing import Generator
-from p21cmfastwrapper import Parameters
 from numpy.typing import NDArray
 from alive_progress import alive_bar
 import pickle
