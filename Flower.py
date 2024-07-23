@@ -152,6 +152,8 @@ class Probability:
     def loss(self, test_lc, fiducial_lc):
         """Compute the loss function.
             shape must be [bins, [data, variance], *data] = (bins, 2, *data)
+            We also assume implicit Gaussian prior, which for large data isn't
+            a bad start
 
         Args:
             test_lc: The test lightcone.
@@ -161,7 +163,9 @@ class Probability:
             float: The loss value.
         """
         print("computing loss")
-        loss = - 0.5*np.sum( (test_lc[:,0] - fiducial_lc[:,0])**2 / (test_lc[:,1]**2 + fiducial_lc[:,1]**2) + np.log(test_lc[:,1]**2 + fiducial_lc[:,1]**2))
+        loss = - 0.5*np.sum( (test_lc[:,0] - fiducial_lc[:,0])**2 
+                            / (test_lc[:,1] + fiducial_lc[:,1]) 
+                            + np.log(test_lc[:,1] + fiducial_lc[:,1]))
         return loss
 
     def prior_dynasty(self, parameters: NDArray) -> NDArray:
@@ -284,8 +288,10 @@ class Probability:
                                         ignore_zero_mode=False, bin_ave=True, get_variance=True)
             ps_perp = np.mean(ps_perp,axis=1)
             ps_par = np.mean(ps_par, axis=(1,2))
-            ps[bin,0,:,:] = np.outer(ps_perp*k_perp**2, ps_par*k_par).T
-            ps[bin,1,:,:] = np.outer(var_perp*k_perp**2, var_par*k_par).T
+            var_par = np.mean(var_par, axis=1)
+            var_perp = np.mean(var_perp, axis=1)
+            ps[bin,0,:,:] = np.outer(ps_perp, ps_par)
+            ps[bin,1,:,:] = np.sqrt(np.outer(var_perp, var_par))
             self.debug(
                 f"PS is {ps[bin,0,:,:]}" + f" in {bin} for k_perp {k_perp}" + f"\nfor k_par {k_par}"
             )
