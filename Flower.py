@@ -95,8 +95,8 @@ class Probability:
         test_ps = self.summary_statistics(lightcone=lightcone)
         chi2 = self.loss(test_lc=test_ps, fiducial_lc=fid_ps)
         self.debug(f"Likelihood={chi2}")
-        self.debug(f"LogLikelihood={np.log(chi2)}")
-        return - chi2
+        self.debug(f"LogLikelihood={np.log(-chi2)}")
+        return chi2
 
     # def prior_ns(self, parameter: list):
 
