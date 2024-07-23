@@ -278,9 +278,9 @@ class Probability:
             # get variance=False for now until nice usecase is found
             field = lightcone.brightness_temp[:,:,zbins[bin]:zbins[bin+1]]
             
-            ps_perp,k_perp, _, var_perp = get_power(field, boxlength=lightcone.cell_size*np.asarray(field.shape), res_ndim=2, bins = self.bins, 
+            ps_perp,k_perp,_, var_perp = get_power(field, boxlength=lightcone.cell_size*np.asarray(field.shape), res_ndim=2, bins = self.bins, 
                                     ignore_zero_mode=False, bin_ave=True, get_variance=True) 
-            ps_par, k_par, var_par = get_power(field.T, boxlength=lightcone.cell_size*np.asarray(field.shape), res_ndim=1, bins = self.bins, 
+            ps_par, k_par,_, var_par = get_power(field.T, boxlength=lightcone.cell_size*np.asarray(field.shape), res_ndim=1, bins = self.bins, 
                                         ignore_zero_mode=False, bin_ave=True, get_variance=True)
             ps_perp = np.mean(ps_perp,axis=1)
             ps_par = np.mean(ps_par, axis=(1,2))
