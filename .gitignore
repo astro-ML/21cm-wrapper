@@ -33,3 +33,4 @@ p21cmfastwrapper.py
 *.ipynb
 !tutorial.ipynb
 *.log
+21mc*
