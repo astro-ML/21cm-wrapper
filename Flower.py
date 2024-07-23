@@ -218,7 +218,7 @@ class Probability:
             )
         return ps
 
-    def ps2d(self, lightcone: object):
+    def ps2d_yannic(self, lightcone: object):
         """Compute the 2D power spectrum.
 
         Args:
@@ -243,12 +243,15 @@ class Probability:
             # get variance=False for now until nice usecase is found
             field = lightcone.brightness_temp[:,:,zbins[bin]:zbins[bin+1]]
             k_perp, k_par, ps[bin,0, :, :] = self.compute_ps2d(field, lightcone.cell_size*field.shape)
+            if bin == 0:
+                sigma = np.ones(ps[bin,0,:,:].shape)
+            ps[bin,1,:,:] = sigma   
             self.debug(
                 f"PS is {ps[bin,0,:,:]}" + f" in {bin} for k_perp {k_perp}" + f"\nfor k_par {k_par}"
             )
         return ps
 
-    def compute_ps2d(self, lightcone: object):
+    def ps2d(self, lightcone: object):
         """Compute the 2D power spectrum.
 
         Args:
