@@ -339,58 +339,64 @@ class Simulation(Leaf):
         self.redshift = redshift
         self.Probability = Probability
         self.noise = noise_type
-        fid_file = fnmatch.filter(os.listdir(self.data_path), "fiducial_cone.h5")
-        ps_file = fnmatch.filter(os.listdir(self.data_path), "fiducial_ps.npy")
-        if debug:
-            print("Search for existing fiducial lightcone...")
-        if (len(fid_file) != 0) and not regenerate_fiducial:
+        self.fid_file = fnmatch.filter(os.listdir(self.data_path), "fiducial_cone.h5")
+        self.ps_file = fnmatch.filter(os.listdir(self.data_path), "fiducial_ps.npy")
+        self.regenerate_fiducial = regenerate_fiducial
+        self.data_path = data_path
+        
+        
+    def make_fiducial(self):
 
+        self.debug("Search for existing fiducial lightcone...")
+        
+        if (len(self.fid_file) != 0) and not self.regenerate_fiducial:
             fiducial_cone = self.load(
-                self.data_path + "fiducial_cone.h5", lightcone=True
+            self.data_path + "fiducial_cone.h5", lightcone=True
             )
-            if debug:
-                print("Existing lightcone successfully loaded.")
+
+            self.debug("Existing lightcone successfully loaded.")
+            
         else:
-            if regenerate_fiducial and (len(fid_file) != 0):
-                os.remove(data_path + "fiducial_cone.h5")
+            if self.regenerate_fiducial and (len(self.fid_file) != 0):
+                os.remove(self.data_path + "fiducial_cone.h5")
+            
             temp_threads = self.userparams.N_THREADS
             self.userparams.update(
-                N_THREADS=os.cpu_count() if os.cpu_count() < 33 else 32
+            N_THREADS=os.cpu_count() if os.cpu_count() < 33 else 32
             )
             fiducial_cone = self.run_lightcone(
-                redshift=redshift,
-                save=False,
-                # fixed see because fiducial lightcones should look the same
-                random_seed=42,
-                filter_peculiar=False,
-                sanity_check=True,
+            redshift=self.redshift,
+            save=False,
+            # fixed see because fiducial lightcones should look the same
+            random_seed=42,
+            filter_peculiar=False,
+            sanity_check=True,
             )
             self.userparams.update(N_THREADS=temp_threads)
             self.save(
-                obj=fiducial_cone, fname="fiducial_cone", direc=data_path, run_id=""
+            obj=fiducial_cone, fname="fiducial_cone", direc=self.data_path, run_id=""
             )
-            if debug:
-                print("New lightcone successfully computed and saved.")
 
-        if debug:
-            print("Search for existing summary statistics...")
-        if (len(ps_file) != 0) and not regenerate_fiducial:
+            self.debug("New lightcone successfully computed and saved.")
+
+
+        self.debug("Search for existing summary statistics...")
+        if (len(self.ps_file) != 0) and not self.regenerate_fiducial:
             self.fiducial_ps = np.load(self.data_path + "fiducial_ps.npy")
-            if debug:
-                print("Existing summary statistics successfully loaded.")
-            if debug:
-                print("PS is ", self.fiducial_ps)
+
+            self.debug("Existing summary statistics successfully loaded.")
+
+            self.debug("PS is " + str(self.fiducial_ps))
         else:
-            if regenerate_fiducial and (len(ps_file) != 0):
-                os.remove(data_path + "fiducial_ps.npy")
+            if self.regenerate_fiducial and (len(self.ps_file) != 0):
+                os.remove(self.data_path + "fiducial_ps.npy")
 
             # 1dps hardcoded change to generic summary statistic in the future
             self.fiducial_ps = self.Probability.summary_statistics(fiducial_cone)
-            np.save(data_path + "fiducial_ps.npy", self.fiducial_ps)
-            if debug:
-                print("PS is ", self.fiducial_ps)
-            if debug:
-                print("New summary statistics successfully computed and saved.")
+            np.save(self.data_path + "fiducial_ps.npy", self.fiducial_ps)
+
+            self.debug("PS is " + str(self.fiducial_ps))
+            self.debug("New summary statistics successfully computed and saved.")
 
     def step(self, parameters: list[float]) -> float:
         """
