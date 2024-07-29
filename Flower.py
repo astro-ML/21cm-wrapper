@@ -1,11 +1,7 @@
 from Leaf import *
-from powerbox.tools import get_power
+from py21cmfast_tools import calculate_ps
 import emcee
 import dynesty
-my_module_path = os.path.join("./", '21cm-PS')
-sys.path.append(my_module_path)
-from power_spectra import PowerSpectrum
-from data_processing import DataProcessor
 
 
 class KeyMismatchError(Exception):
@@ -37,8 +33,6 @@ class Probability:
         self.bins = bins
         self.fmodel_path = fmodel_path
         self.prior_ranges = prior_ranges
-        self.ps = PowerSpectrum()
-        self.ps.data = DataProcessor()
         self.sum_stat = summary_statistics
 
         def replace_lists_with_zero(d):
@@ -163,9 +157,10 @@ class Probability:
             float: The loss value.
         """
         print("computing loss")
-        loss = - 0.5*np.sum( (test_lc[:,0] - fiducial_lc[:,0])**2 
-                            / (test_lc[:,1] + fiducial_lc[:,1]) 
-                            + np.log(test_lc[:,1] + fiducial_lc[:,1]))
+        sig = np.sqrt(fiducial_lc) + np.sqrt(test_lc)
+        loss = - 0.5*np.sum( (test_lc - fiducial_lc)**2 
+                            / sig
+                            - np.log(sig))
         return loss
 
     def prior_dynasty(self, parameters: NDArray) -> NDArray:
@@ -192,68 +187,10 @@ class Probability:
         Returns:
             object: The computed 1D power spectrum.
         """
-        if type(self.chunks) == int:
-            self.debug("Compute 1D PS using int chunks")
-            zbins = np.linspace(
-                0, lightcone.lightcone_redshifts.shape[0] - 1, self.chunks + 1
-            ).astype(int)
-        else:
-            self.debug("Compute 1D PS using list chunks")
-            zbins = self.chunks
-        if type(self.bins) == int:
-            ps = np.empty((len(zbins)-1, 2, self.bins))
-        else:
-            ps = np.empty((len(zbins)-1, 2, len(self.bins)-1))
-        for bin in range(len(zbins) - 1):
-            # get variance=False for now until nice usecase is found
-            ps[bin, 0, :], k, ps[bin, 1, :] = get_power(
-                deltax=lightcone.brightness_temp[:, :, zbins[bin] : zbins[bin + 1]],
-                boxlength=lightcone.cell_size
-                * np.asarray(lightcone.brightness_temp.shape),
-                bin_ave=True,
-                ignore_zero_mode=True,
-                get_variance=True,
-                bins=self.bins,
-                vol_normalised_power=True,
-            )
-            ps[bin, :, :] *= k ** 3 
-            self.debug(
-                f"PS is {ps[bin,0,:]}" + f" for bin {bin}" + f"\nfor ks {k}"
-            )
-        return ps
-
-    def ps2d_yannic(self, lightcone: object):
-        """Compute the 2D power spectrum.
-
-        Args:
-            lightcone (object): The lightcone object.
-
-        Returns:
-            object: The computed 2D power spectrum.
-        """
-        if type(self.chunks) == int:
-            self.debug("Compute 2D PS using int chunks")
-            zbins = np.linspace(
-                0, lightcone.lightcone_redshifts.shape[0] - 1, self.chunks + 1
-            ).astype(int)
-        else:
-            self.debug("Compute 2D PS using list chunks")
-            zbins = self.chunks
-        if type(self.bins) == int:
-            ps = np.empty((len(zbins)-1, 2, self.bins, self.bins))
-        else:
-            ps = np.empty((len(zbins)-1, 2, len(self.bins), len(self.bins)))
-        for bin in range(len(zbins) - 1):
-            # get variance=False for now until nice usecase is found
-            field = lightcone.brightness_temp[:,:,zbins[bin]:zbins[bin+1]]
-            k_perp, k_par, ps[bin,0, :, :] = self.compute_ps2d(field, lightcone.cell_size*field.shape)
-            if bin == 0:
-                sigma = np.ones(ps[bin,0,:,:].shape)
-            ps[bin,1,:,:] = sigma   
-            self.debug(
-                f"PS is {ps[bin,0,:,:]}" + f" in {bin} for k_perp {k_perp}" + f"\nfor k_par {k_par}"
-            )
-        return ps
+        res = calculate_ps(lc = lightcone.brightness_temp, lc_redshifts=lightcone.lightcone_redshifts, 
+                           box_length=lightcone.UserParams.BOX_LEN, box_side_shape=lightcone.UserParams.HII_DIM,
+                           log_bins=False, chunk_size=self.binsc, calc_1d=True, calc_2d=False)
+        return res['ps_1D']
 
     def ps2d(self, lightcone: object):
         """Compute the 2D power spectrum.
@@ -266,36 +203,12 @@ class Probability:
             tuple: The k_perp, k_par, and the computed 2D power spectrum.
         """
         
-        if type(self.chunks) == int:
-            self.debug("Compute 2D PS using int chunks")
-            zbins = np.linspace(
-                0, lightcone.lightcone_redshifts.shape[0] - 1, self.chunks + 1
-            ).astype(int)
-        else:
-            self.debug("Compute 2D PS using list chunks")
-            zbins = self.chunks
-        if type(self.bins) == int:
-            ps = np.empty((len(zbins)-1, 2, self.bins, self.bins))
-        else:
-            ps = np.empty((len(zbins)-1, 2, len(self.bins), len(self.bins)))
-        for bin in range(len(zbins) - 1):
-            # get variance=False for now until nice usecase is found
-            field = lightcone.brightness_temp[:,:,zbins[bin]:zbins[bin+1]]
-            
-            ps_perp,k_perp, var_perp, _ = get_power(field, boxlength=lightcone.cell_size*np.asarray(field.shape), res_ndim=2, bins = self.bins, 
-                                    ignore_zero_mode=False, bin_ave=True, get_variance=True) 
-            ps_par, k_par, var_par, _ = get_power(field.T, boxlength=lightcone.cell_size*np.asarray(field.shape), res_ndim=1, bins = self.bins, 
-                                        ignore_zero_mode=False, bin_ave=True, get_variance=True)
-            ps_perp = np.mean(ps_perp,axis=1)
-            ps_par = np.mean(ps_par, axis=(1,2))
-            var_par = np.mean(var_par, axis=1)
-            var_perp = np.mean(var_perp, axis=1)
-            ps[bin,0,:,:] = np.outer(ps_perp, ps_par)
-            ps[bin,1,:,:] = np.sqrt(np.outer(var_perp, var_par))
-            self.debug(
-                f"PS is {ps[bin,0,:,:]}" + f" in {bin} for k_perp {k_perp}" + f"\nfor k_par {k_par}"
-            )
-        return ps
+
+        res = calculate_ps(lc = lightcone.brightness_temp, lc_redshifts=lightcone.lightcone_redshifts, 
+                           box_length=lightcone.UserParams.BOX_LEN, box_side_shape=lightcone.UserParams.HII_DIM,
+                           log_bins=False, chunk_size=self.binsc, calc_1d=False, calc_2d=True)
+
+        return res['final_ps_2D']
 
     def debug(self, msg):
         """Print the debug message.
