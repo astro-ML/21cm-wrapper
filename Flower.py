@@ -288,6 +288,16 @@ class Simulation(Leaf):
             sanity_check=True,
             )
             self.userparams.update(N_THREADS=temp_threads)
+            if self.noise is not None:
+                if self.noise[0] == 1:
+                    fiducial_cone.brightness_temp = Simulation.gaussian_noise(
+                        fiducial_cone.brightness_temp, **self.noise[1:]
+                    )
+                elif self.noise[0] == 2:
+                    print("Better noise model here")
+                    # test_lc.brightness_temp = Simulation.gaussian_noise(test_lc.brightness_temp, **self.noise[1:])
+                else:
+                    print("Noise-type not found you gave: ", self.noise)
             self.save(
             obj=fiducial_cone, fname="fiducial_cone", direc=self.data_path, run_id=""
             )
