@@ -157,7 +157,7 @@ class Probability:
             float: The loss value.
         """
         print("computing loss")
-        sig = np.sqrt(fiducial_lc) + np.sqrt(test_lc)
+        sig = np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
         loss = - 0.5*np.sum( (test_lc - fiducial_lc)**2 
                             / sig
                             - np.log(sig))
@@ -187,9 +187,11 @@ class Probability:
         Returns:
             object: The computed 1D power spectrum.
         """
+        chunk_size = lightcone.brightness_temp.shape[0] // self.chunks
         res = calculate_ps(lc = lightcone.brightness_temp, lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.UserParams.BOX_LEN, box_side_shape=lightcone.UserParams.HII_DIM,
-                           log_bins=False, chunk_size=self.binsc, calc_1d=True, calc_2d=False)
+                           log_bins=True, chunk_size=chunk_size, calc_1d=True, calc_2d=False,
+                           bins=self.bins, chunk_skip=0)
         return res['ps_1D']
 
     def ps2d(self, lightcone: object):
@@ -203,11 +205,11 @@ class Probability:
             tuple: The k_perp, k_par, and the computed 2D power spectrum.
         """
         
-
+        chunk_size = lightcone.brightness_temp.shape[0] // self.chunks
         res = calculate_ps(lc = lightcone.brightness_temp, lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.UserParams.BOX_LEN, box_side_shape=lightcone.UserParams.HII_DIM,
-                           log_bins=False, chunk_size=self.binsc, calc_1d=False, calc_2d=True)
-
+                           log_bins=True, chunk_size=chunk_size, calc_1d=False, calc_2d=True,
+                           bins=self.bins, chunk_skip=0)
         return res['final_ps_2D']
 
     def debug(self, msg):
@@ -519,8 +521,9 @@ class Flower(Simulation):
         with schwimmhalle as p:
             sampler = dynesty.NestedSampler(loglikelihood=self.step, 
                                         prior_transform=self.Probability.prior_dynasty, 
-                                        ndim=ndim, nlive = npoints, bound='balls',
-                                        pool=p, queue_size = threads) 
+                                        ndim=ndim, nlive = npoints, bound='multi',
+                                        pool=p, queue_size = threads, sample='slice',
+                                        first_update={'min_ncall': 100, 'min_eff': 50.}) 
             sampler.run_nested(dlogz=0.5, checkpoint_file=self.data_path + filename)
 
         
