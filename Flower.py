@@ -191,7 +191,7 @@ class Probability:
         res = calculate_ps(lc = lightcone.brightness_temp, lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
                            log_bins=True, chunk_size=chunk_size, calc_1d=True, calc_2d=False,
-                           bins=self.bins, chunk_skip=0)
+                           nbins_1d=self.bins, chunk_skip=0)
         return res['ps_1D']
 
     def ps2d(self, lightcone: object):
@@ -209,7 +209,7 @@ class Probability:
         res = calculate_ps(lc = lightcone.brightness_temp, lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
                            log_bins=True, chunk_size=chunk_size, calc_1d=False, calc_2d=True,
-                           bins=self.bins, chunk_skip=0)
+                           nbins=self.bins, chunk_skip=0)
         return res['final_ps_2D']
 
     def debug(self, msg):
@@ -291,7 +291,7 @@ class Simulation(Leaf):
             if self.noise is not None:
                 if self.noise[0] == 1:
                     fiducial_cone.brightness_temp = Simulation.gaussian_noise(
-                        fiducial_cone.brightness_temp, **self.noise[1:]
+                        fiducial_cone.brightness_temp, *self.noise[1:]
                     )
                 elif self.noise[0] == 2:
                     print("Better noise model here")
@@ -352,7 +352,7 @@ class Simulation(Leaf):
         if self.noise is not None:
             if self.noise[0] == 1:
                 test_lc.brightness_temp = Simulation.gaussian_noise(
-                    test_lc.brightness_temp, **self.noise[1:]
+                    test_lc.brightness_temp, *self.noise[1:]
                 )
             elif self.noise[0] == 2:
                 print("Better noise model here")
