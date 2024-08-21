@@ -1,6 +1,0 @@
-[submodule "21cmFAST"]
-	path = 21cmFAST
-	url = https://github.com/Kojobu/21cmFAST.git
-[submodule "21cm-PS"]
-	path = 21cm-PS
-	url = https://github.com/astro-ML/21cm-PS.git
