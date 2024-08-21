@@ -1,5 +1,6 @@
 from Leaf import *
 from py21cmfast_tools import calculate_ps
+from powerbox.tools import ignore_zero_absk
 import emcee
 import dynesty
 
@@ -12,7 +13,7 @@ class Probability:
     def __init__(
         self,
         prior_ranges: dict,
-        z_chunks: int | list[int],
+        z_eval: int | list[int],
         bins: int,
         debug: bool = True,
         fmodel_path: str = "./mcmc_data/fiducial_ps.npy",
@@ -22,14 +23,14 @@ class Probability:
 
         Args:
             prior_ranges (dict): A dictionary containing the prior ranges for the parameters.
-            z_chunks (int | list[int]): The number of chunks or a list of chunk indices for computing the power spectrum.
+            z_eval (list[float]): A list of redshifts at which the power spectrum will be evaluated.
             bins (int): The number of bins for the power spectrum.
             debug (bool, optional): Whether to enable debug mode. Defaults to True.
             fmodel_path (str, optional): The path to the fiducial model. Defaults to "./mcmc_data/fiducial_cone.npy".
             summary_statistics (str, optional): The type of summary statistics to compute. Defaults to "1dps".
         """
         self.dodebug = debug
-        self.chunks = z_chunks
+        self.z_eval = z_eval
         self.bins = bins
         self.fmodel_path = fmodel_path
         self.prior_ranges = prior_ranges
@@ -178,23 +179,23 @@ class Probability:
         self.debug("Prior: " + str(parameters))
         return parameters
 
-    def ps1d(self, lightcone: object):
+    def ps1d(self, lightcone: object) -> NDArray:
         """Compute the 1D power spectrum.
 
         Args:
             lightcone (object): The lightcone object.
 
         Returns:
-            object: The computed 1D power spectrum.
+            NDArray: The computed 1D power spectrum.
         """
-        chunk_size = lightcone.brightness_temp.shape[0] // self.chunks
-        res = calculate_ps(lc = lightcone.brightness_temp, lc_redshifts=lightcone.lightcone_redshifts, 
+
+        res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
-                           log_bins=True, chunk_size=chunk_size, calc_1d=True, calc_2d=False,
-                           nbins_1d=self.bins, chunk_skip=0)
+                           log_bins=False, zs = self.z_eval, calc_1d=True, calc_2d=False,
+                           nbins_1d=self.bins, bin_ave=True, k_weights=ignore_zero_absk,)
         return res['ps_1D']
 
-    def ps2d(self, lightcone: object):
+    def ps2d(self, lightcone: object) -> NDArray:
         """Compute the 2D power spectrum.
 
         Args:
@@ -202,14 +203,13 @@ class Probability:
             size: The size of the data.
 
         Returns:
-            tuple: The k_perp, k_par, and the computed 2D power spectrum.
+            NDArray: The computed 2D power spectrum.
         """
         
-        chunk_size = lightcone.brightness_temp.shape[0] // self.chunks
-        res = calculate_ps(lc = lightcone.brightness_temp, lc_redshifts=lightcone.lightcone_redshifts, 
+        res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
-                           log_bins=True, chunk_size=chunk_size, calc_1d=False, calc_2d=True,
-                           nbins=self.bins, chunk_skip=0)
+                           log_bins=False, zs = self.z_eval, calc_1d=False, calc_2d=True,
+                           nbins_1d=self.bins, bin_ave=True, k_weights=ignore_zero_absk,)
         return res['final_ps_2D']
 
     def debug(self, msg):
@@ -290,12 +290,13 @@ class Simulation(Leaf):
             self.userparams.update(N_THREADS=temp_threads)
             if self.noise is not None:
                 if self.noise[0] == 1:
-                    fiducial_cone.brightness_temp = Simulation.gaussian_noise(
-                        fiducial_cone.brightness_temp, *self.noise[1:]
+                    self.debug("Gaussian noise will be added...")
+                    fiducial_cone.lightcones['brightness_temp']  = Simulation.gaussian_noise(
+                        fiducial_cone.lightcones['brightness_temp'] , *self.noise[1:]
                     )
                 elif self.noise[0] == 2:
                     print("Better noise model here")
-                    # test_lc.brightness_temp = Simulation.gaussian_noise(test_lc.brightness_temp, **self.noise[1:])
+                    # test_lc.lightcones['brightness_temp']  = Simulation.gaussian_noise(test_lc.lightcones['brightness_temp'] , **self.noise[1:])
                 else:
                     print("Noise-type not found you gave: ", self.noise)
             self.save(
@@ -304,6 +305,9 @@ class Simulation(Leaf):
 
             self.debug("New lightcone successfully computed and saved.")
 
+        if np.isnan(fiducial_cone.lightcones['brightness_temp'] ).any(): 
+            raise ValueError("Brightness temperature contains NaNs!" + 
+                                "Please check your parameters and try again")
 
         self.debug("Search for existing summary statistics...")
         if (len(self.ps_file) != 0) and not self.regenerate_fiducial:
@@ -322,6 +326,9 @@ class Simulation(Leaf):
 
             self.debug("PS is " + str(self.fiducial_ps))
             self.debug("New summary statistics successfully computed and saved.")
+        if np.isnan(self.fiducial_ps).any(): 
+            raise ValueError("Summary statistics contains NaNs!" + 
+                                "Please check your parameters and try again")
 
     def step(self, parameters: list[float]) -> float:
         """
@@ -351,12 +358,12 @@ class Simulation(Leaf):
         )
         if self.noise is not None:
             if self.noise[0] == 1:
-                test_lc.brightness_temp = Simulation.gaussian_noise(
-                    test_lc.brightness_temp, *self.noise[1:]
+                test_lc.lightcones['brightness_temp']  = Simulation.gaussian_noise(
+                    test_lc.lightcones['brightness_temp'] , *self.noise[1:]
                 )
             elif self.noise[0] == 2:
                 print("Better noise model here")
-                # test_lc.brightness_temp = Simulation.gaussian_noise(test_lc.brightness_temp, **self.noise[1:])
+                # test_lc.lightcones['brightness_temp']  = Simulation.gaussian_noise(test_lc.lightcones['brightness_temp'] , **self.noise[1:])
             else:
                 print("Noise-type not found you gave: ", self.noise)
         # compute probability

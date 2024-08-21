@@ -186,7 +186,7 @@ class Leaf:
                 write=self.write_cache,
             )
             if sanity_check:
-                run.brightness_temp = self.nan_adversary(run.brightness_temp, run_id)
+                run.lightcones['brightness_temp']  = self.nan_adversary(run.lightcones['brightness_temp'] , run_id)
             if save:
                 self.save(
                     run, fname=self.data_prefix, direc=self.data_path, run_id=run_id
@@ -264,7 +264,7 @@ class Leaf:
             )
             self.debug("Done simulating. Do sanity check...")
             if sanity_check:
-                run.brightness_temp = self.nan_adversary(run.brightness_temp, run_id)
+                run.lightcones['brightness_temp']  = self.nan_adversary(run.lightcones['brightness_temp'] , run_id)
             self.debug("Sanity check passed. Write statistics...")
             if self.make_statistics or filter_peculiar:
                 tau = p21c.compute_tau(
