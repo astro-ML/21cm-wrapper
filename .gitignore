@@ -34,3 +34,6 @@ p21cmfastwrapper.py
 !tutorial.ipynb
 *.log
 21mc*
+*.py
+!Leaf.py
+!Flower.py
