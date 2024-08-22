@@ -1,4 +1,3 @@
-./21cmFAST
 matplotlib
 numpy
 pyyaml

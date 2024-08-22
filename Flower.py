@@ -161,7 +161,7 @@ class Probability:
         sig = np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
         loss = - 0.5*np.sum( (test_lc - fiducial_lc)**2 
                             / sig
-                            - np.log(sig))
+                            + np.log(sig))
         return loss
 
     def prior_dynasty(self, parameters: NDArray) -> NDArray:
@@ -209,7 +209,7 @@ class Probability:
         res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
                            log_bins=False, zs = self.z_eval, calc_1d=False, calc_2d=True,
-                           nbins_1d=self.bins, bin_ave=True, k_weights=ignore_zero_absk,)
+                           nbins=self.bins, bin_ave=True, k_weights=ignore_zero_absk,)
         return res['final_ps_2D']
 
     def debug(self, msg):
