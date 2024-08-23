@@ -347,6 +347,7 @@ class Simulation(Leaf):
         parameters = Simulation.replace_values(self.Probability.parameter, parameters)
         self.debug("Current parameters are:" + str(parameters))
         if not self.Probability.prior_emcee(parameters):
+            self.debug("Return -inf due to off-boundary prior")
             return - np.inf
         # run lightcone sim
         test_lc = self.run_lightcone(
@@ -538,9 +539,9 @@ class Flower(Simulation):
         with schwimmhalle as p:
             sampler = dynesty.NestedSampler(loglikelihood=self.step, 
                                         prior_transform=self.Probability.prior_dynasty, 
-                                        ndim=ndim, nlive = npoints, bound='multi',
-                                        pool=p, queue_size = threads, sample='slice',
-                                        first_update={'min_ncall': 100, 'min_eff': 50.}) 
-            sampler.run_nested(dlogz=0.5, checkpoint_file=self.data_path + filename)
+                                        ndim=ndim, nlive = npoints, bound='cubes',
+                                        pool=p, queue_size = threads, sample='rslice',)
+                                        #first_update={'min_ncall': npoints, 'min_eff': 20.}) 
+            sampler.run_nested(checkpoint_file=self.data_path + filename)
 
         
