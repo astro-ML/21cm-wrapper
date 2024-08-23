@@ -158,7 +158,7 @@ class Probability:
             float: The loss value.
         """
         print("computing loss")
-        sig = np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
+        sig = 1 # np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
         loss = - 0.5*np.sum( (test_lc - fiducial_lc)**2 
                             / sig
                             + np.log(sig))
@@ -189,10 +189,14 @@ class Probability:
             NDArray: The computed 1D power spectrum.
         """
 
-        res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , lc_redshifts=lightcone.lightcone_redshifts, 
-                           box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
-                           log_bins=False, zs = self.z_eval, calc_1d=True, calc_2d=False,
-                           nbins_1d=self.bins, bin_ave=True, k_weights=ignore_zero_absk,)
+        res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , 
+                           lc_redshifts=lightcone.lightcone_redshifts, 
+                           box_length=lightcone.user_params.BOX_LEN, 
+                           box_side_shape=lightcone.user_params.HII_DIM,
+                           log_bins=False, zs = self.z_eval, 
+                           calc_1d=True, calc_2d=False,
+                           nbins_1d=self.bins, bin_ave=True, 
+                           k_weights=ignore_zero_absk,)
         return res['ps_1D']
 
     def ps2d(self, lightcone: object) -> NDArray:
