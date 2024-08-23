@@ -453,7 +453,7 @@ class Leaf:
             return bt_cone
 
     def save(self, obj: object, fname: str, direc: str, run_id: int | str) -> None:
-        self.debug(f"Save {fname + run_id} to disk...")
+        self.debug(f"Save {fname + str(run_id)} to disk...")
         obj.save(fname=fname + str(run_id) + ".h5", direc=direc)
 
     def load(self, path_to_obj: str, lightcone: bool) -> object:
