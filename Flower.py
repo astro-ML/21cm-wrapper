@@ -548,4 +548,29 @@ class Flower(Simulation):
                                         #first_update={'min_ncall': npoints, 'min_eff': 20.}) 
             sampler.run_nested(checkpoint_file=self.data_path + filename)
 
+    def run_dns(self, filename: str = "./results_dynasty", threads: int = 1, npoints: int = 250, **dynasty_params):
+        """
+        Run the nested sampling.
+
+        Args:
+            filename (str, optional): The filename to save the results. Defaults to "./results_dynasty".
+            threads (int, optional): The number of threads to use. Defaults to 1.
+            npoints (int, optional): The number of live points. Defaults to 250.
+            **dynasty_params: Additional parameters for the nested sampling algorithm.
+        """
+        self.debug("Starting nested sampling...")
+        ndim = num_elements(self.Prob.prior_ranges)
+        self.debug("Number of parameters: " + str(ndim))
+        schwimmhalle = Pool(
+            max_workers=threads, max_tasks_per_child=1, mp_context=get_context("spawn")
+        )
+        with schwimmhalle as p:
+            dsampler = dynesty.DynamicNestedSampler(loglikelihood=self.step, 
+                                        prior_transform=self.Probability.prior_dynasty, 
+                                        ndim=ndim, bound='cubes',
+                                        pool=p, queue_size = threads, sample='rslice',)
+                                        #first_update={'min_ncall': npoints, 'min_eff': 20.}) 
+            dsampler.run_nested(checkpoint_file=self.data_path + filename)
+
+
         
