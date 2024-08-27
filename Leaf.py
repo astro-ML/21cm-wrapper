@@ -127,7 +127,7 @@ class Leaf:
         redshift: float = None,
         save: bool = True,
         random_seed: int = None,
-        sanity_check: bool = True,
+        sanity_check: bool = False,
         astro_params: dict = None,
         cosmo_params: dict = None,
         user_params: dict = None,
@@ -200,7 +200,7 @@ class Leaf:
         save: bool = True,
         random_seed: int = None,
         sanity_check: bool = True,
-        filter_peculiar: bool = True,
+        filter_peculiar: bool = False,
         astro_params: dict = {},
         cosmo_params: dict = {},
         user_params: dict = {},
@@ -262,27 +262,33 @@ class Leaf:
                 write=self.write_cache,
                 lightcone_quantities=fields,
             )
-            self.debug("Done simulating. Do sanity check...")
+            self.debug("Done simulating.")
             if sanity_check:
+                self.debug("Do sanity check...")
                 run.lightcones['brightness_temp']  = self.nan_adversary(run.lightcones['brightness_temp'] , run_id)
-            self.debug("Sanity check passed. Write statistics...")
+                self.debug("Sanity check passed.")
             if self.make_statistics or filter_peculiar:
+                self.debug("Compute tau...")
                 tau = p21c.compute_tau(
                     redshifts=run.node_redshifts[::-1], global_xHI=run.global_xH[::-1]
                 )
                 self.tau.append(tau)
-            self.debug("Statistics written. Do filtering...")
+                self.debug(f"Tau computed. {tau=}")
             if filter_peculiar:
+                self.debug("Filter according to 5 sigma Planck cosmo...")
                 if not self.lc_filter(
                     tau=self.tau[-1], gxH0=run.global_xH[-1], run_id=run_id
                 ):
                     return
-            self.debug("Filtering passed. Save or return file now.")
+                self.debug("Filtering passed.")
             if save:
+                self.debug(f"Saving lightcone {self.data_prefix + str(run_id)}...")
                 self.save(
                     obj=run, fname=self.data_prefix, direc=self.data_path, run_id=run_id
                 )
+                self.debug(f"Lightcone {self.data_prefix + str(run_id)} saved.")
             else:
+                self.debug("Returning lightcone now.")
                 return run
 
     def run_lcsampling(
@@ -292,7 +298,7 @@ class Leaf:
         save: bool = True,
         random_seed: int = None,
         sanity_check: bool = True,
-        filter_peculiar: bool = True,
+        filter_peculiar: bool = False,
         override: bool = False,
         threads: int = 1,
         mpi: bool = False,
