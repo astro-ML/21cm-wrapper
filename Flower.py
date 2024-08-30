@@ -543,8 +543,8 @@ class Flower(Simulation):
         with schwimmhalle as p:
             sampler = dynesty.NestedSampler(loglikelihood=self.step, 
                                         prior_transform=self.Probability.prior_dynasty, 
-                                        ndim=ndim, nlive = npoints, bound='cubes',
-                                        pool=p, queue_size = threads, sample='rslice',)
+                                        ndim=ndim, nlive = npoints, bound='cubes', # 'multi'
+                                        pool=p, queue_size = threads, sample='rwalk',)
                                         #first_update={'min_ncall': npoints, 'min_eff': 20.}) 
             sampler.run_nested(checkpoint_file=self.data_path + filename, **dynasty_params)
 
@@ -560,6 +560,7 @@ class Flower(Simulation):
         """
         self.debug("Starting nested sampling...")
         ndim = num_elements(self.Prob.prior_ranges)
+        print("ndim =", ndim)
         self.debug("Number of parameters: " + str(ndim))
         schwimmhalle = Pool(
             max_workers=threads, max_tasks_per_child=1, mp_context=get_context("spawn")
@@ -567,10 +568,12 @@ class Flower(Simulation):
         with schwimmhalle as p:
             dsampler = dynesty.DynamicNestedSampler(loglikelihood=self.step, 
                                         prior_transform=self.Probability.prior_dynasty, 
-                                        ndim=ndim, bound='cubes',
-                                        pool=p, queue_size = threads, sample='rslice',)
+                                        ndim=ndim, bound='multi', # 'multi'
+                                        pool=p, queue_size = threads, sample='auto',)
                                         #first_update={'min_ncall': npoints, 'min_eff': 20.}) 
-            dsampler.run_nested(checkpoint_file=self.data_path + filename, **dynasty_params)
+            dsampler.run_nested(checkpoint_file=self.data_path + filename, **dynasty_params, print_progress=True,
+                                print_func=print, )
+            
 
 
         
