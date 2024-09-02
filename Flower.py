@@ -3,7 +3,9 @@ from py21cmfast_tools import calculate_ps
 from powerbox.tools import ignore_zero_absk
 import emcee
 import dynesty
-
+my_module_path = os.path.join("../", '21cm-sbi')
+sys.path.append(my_module_path)
+from dataloader import *
 
 class KeyMismatchError(Exception):
     pass
@@ -13,11 +15,13 @@ class Probability:
     def __init__(
         self,
         prior_ranges: dict,
-        z_eval: int | list[int],
-        bins: int,
+        z_eval: int | list[int] = np.linspace(5.5, 25, 10),
+        bins: int = 10,
         debug: bool = True,
         fmodel_path: str = "./mcmc_data/fiducial_ps.npy",
-        summary_statistics: str = "1dps"
+        summary_statistics: str = "1dps",
+        summary_net: SumnetHandler = None,
+        z_cut: int = 680,
     ):
         """Stores the likelihood, priors and the summary statistics
 
@@ -28,6 +32,8 @@ class Probability:
             debug (bool, optional): Whether to enable debug mode. Defaults to True.
             fmodel_path (str, optional): The path to the fiducial model. Defaults to "./mcmc_data/fiducial_cone.npy".
             summary_statistics (str, optional): The type of summary statistics to compute. Defaults to "1dps".
+            summary_net (nn.Module, optional): The neural network for computing the summary statistics. Defaults to None.
+            z_cut (int, optional): The redshift cut-off, only required if summary_net is not None to normalize size of lightcones. Defaults to 600.
         """
         self.dodebug = debug
         self.z_eval = z_eval
@@ -35,6 +41,13 @@ class Probability:
         self.fmodel_path = fmodel_path
         self.prior_ranges = prior_ranges
         self.sum_stat = summary_statistics
+        self.z_cut = 680
+        
+        if summary_net is None:
+            self.sum_net = False
+        else:
+            self.sum_net = True
+            self.summary_model = summary_net
 
         def replace_lists_with_zero(d):
             if isinstance(d, dict):
@@ -60,6 +73,8 @@ class Probability:
                 return self.ps1d(lightcone)
             case "2dps":
                 return self.ps2d(lightcone)
+            case "summary_net":
+                return self.summary_net(lightcone)
             case _:
                 print("Summary statistics not found")
 
@@ -178,6 +193,21 @@ class Probability:
         parameters += parameter_ranges[:,0] 
         self.debug("Prior: " + str(parameters))
         return parameters
+    
+    def summary_net(self, lightcone: object) -> NDArray:
+        """Compute the summary statistics using the neural network.
+
+        Args:
+            lightcone (object): The lightcone object.
+
+        Returns:
+            NDArray: The computed summary statistics.
+        """
+        bt = np.expand_dims(np.expand_dims(np.array(lightcone.lightcones['brightness_temp'][:,:,:self.z_cut]), 0),0)
+        diff = bt.max() - bt.min()
+            # normalize to [0,1]
+        bt = (bt - bt.min()) / diff
+        return self.summary_model(torch.as_tensor(bt)).detach().numpy()
 
     def ps1d(self, lightcone: object) -> NDArray:
         """Compute the 1D power spectrum.
@@ -196,7 +226,7 @@ class Probability:
                            log_bins=False, zs = self.z_eval, 
                            calc_1d=True, calc_2d=False,
                            nbins_1d=self.bins, bin_ave=True, 
-                           k_weights=ignore_zero_absk,)
+                           k_weights=ignore_zero_absk,postprocess=True)
         return res['ps_1D']
 
     def ps2d(self, lightcone: object) -> NDArray:
@@ -213,7 +243,7 @@ class Probability:
         res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
                            log_bins=False, zs = self.z_eval, calc_1d=False, calc_2d=True,
-                           nbins=self.bins, bin_ave=True, k_weights=ignore_zero_absk,)
+                           nbins=self.bins, bin_ave=True, k_weights=ignore_zero_absk, postprocess=True)
         return res['final_ps_2D']
 
     def debug(self, msg):
