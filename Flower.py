@@ -571,8 +571,7 @@ class Flower(Simulation):
                                         ndim=ndim, bound='multi', # 'multi'
                                         pool=p, queue_size = threads, sample='auto',)
                                         #first_update={'min_ncall': npoints, 'min_eff': 20.}) 
-            dsampler.run_nested(checkpoint_file=self.data_path + filename, **dynasty_params, print_progress=True,
-                                print_func=print, )
+            dsampler.run_nested(checkpoint_file=self.data_path + filename, **dynasty_params, print_progress=True)
             
 
 
