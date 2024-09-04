@@ -23,6 +23,9 @@ from typing import Generator
 from numpy.typing import NDArray
 from alive_progress import alive_bar
 import pickle
+import psutil
+import warnings
+
 
 # circumvent problems caused by some numpy builds messing with ProcessPoolExecuter
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -566,6 +569,17 @@ class Leaf:
         fig.tight_layout()
         fig.savefig("./data/parameter_distribution.png")
         fig.show()
+        
+    
+    def ramcheck(self, threads, num_fields, HII_DIM):
+        current_ram = psutil.virtual_memory()[4]
+        # 116**3 for empty 3d array x fields + 4 bytes for float32 x threads x fields x HII_DIM**3
+        expected_ram_usage = 4**3*num_fields + 4*threads * num_fields * HII_DIM ** 3
+        if current_ram < expected_ram_usage:
+            warnings.warn(f"Warning: Expected RAM usage {expected_ram_usage} exceeds current RAM {current_ram}.")
+            
+        
+        
 
 
 # class from the older version to handle legacy loading via parameterfile
