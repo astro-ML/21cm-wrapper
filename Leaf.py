@@ -336,6 +336,9 @@ class Leaf:
             *params_range: Give a dict consisting of the parameter as the key and a list passed to the samplefunction
                             e.g. astro_params = {HII_DIM: [140, 160]} for samplef = Leaf.uniform
         """
+        
+        self.ramcheck(threads, 3, self.astroparams.HII_DIM)
+        
         if (
             astro_params_range == {}
             and cosmo_params_range == {}
