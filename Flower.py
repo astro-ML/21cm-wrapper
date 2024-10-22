@@ -102,8 +102,8 @@ class Probability:
             float: The likelihood.
         """
         fid_ps = np.load(self.fmodel_path)
-        test_ps = self.summary_statistics(lightcone=lightcone)
-        chi2 = self.loss(test_lc=test_ps, fiducial_lc=fid_ps)
+        test_ps, variance = self.summary_statistics(lightcone=lightcone)
+        chi2 = self.loss(test_lc=test_ps, fiducial_lc=fid_ps, var=variance)
         self.debug(f"Likelihood={chi2}")
         self.debug(f"LogLikelihood={np.log(-chi2)}")
         return chi2
@@ -159,7 +159,7 @@ class Probability:
         res = self.prior_emcee(parameters)
         return 0 if res else - np.inf
 
-    def loss(self, test_lc, fiducial_lc):
+    def loss(self, test_lc, fiducial_lc, var):
         """Compute the loss function.
             shape must be [bins, [data, variance], *data] = (bins, 2, *data)
             We also assume implicit Gaussian prior, which for large data isn't
@@ -168,12 +168,13 @@ class Probability:
         Args:
             test_lc: The test lightcone.
             fiducial_lc: The fiducial lightcone.
+            var: variance of the test lightcone
 
         Returns:
             float: The loss value.
         """
         print("computing loss")
-        sig = 1 # np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
+        sig = np.sqrt(var) # np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
         loss = - 0.5*np.sum( (test_lc - fiducial_lc)**2 
                             / sig
                             + np.log(sig))
@@ -207,7 +208,7 @@ class Probability:
         diff = bt.max() - bt.min()
             # normalize to [0,1]
         bt = (bt - bt.min()) / diff
-        return self.summary_model(torch.as_tensor(bt)).detach().numpy()
+        return self.summary_model(torch.as_tensor(bt)).detach().numpy(), 1
 
     def ps1d(self, lightcone: object) -> NDArray:
         """Compute the 1D power spectrum.
@@ -224,10 +225,10 @@ class Probability:
                            box_length=lightcone.user_params.BOX_LEN, 
                            box_side_shape=lightcone.user_params.HII_DIM,
                            log_bins=False, zs = self.z_eval, 
-                           calc_1d=True, calc_2d=False,
+                           calc_1d=True, calc_2d=False, get_variance=True,
                            nbins_1d=self.bins, bin_ave=True, 
                            k_weights=ignore_zero_absk,postprocess=True)
-        return res['ps_1D']
+        return res['ps_1D'], res['var_1D']
 
     def ps2d(self, lightcone: object) -> NDArray:
         """Compute the 2D power spectrum.
@@ -242,9 +243,9 @@ class Probability:
         
         res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
-                           log_bins=False, zs = self.z_eval, calc_1d=False, calc_2d=True,
+                           log_bins=False, zs = self.z_eval, calc_1d=False, calc_2d=True, get_variance=True,
                            nbins=self.bins, bin_ave=True, k_weights=ignore_zero_absk, postprocess=True)
-        return res['final_ps_2D']
+        return res['final_ps_2D'], res['full_var_2D']
 
     def debug(self, msg):
         """Print the debug message.

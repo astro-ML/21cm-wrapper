@@ -9,12 +9,14 @@ logger.setLevel(logging.INFO)
 from concurrent.futures import ProcessPoolExecutor as Pool
 from concurrent.futures import as_completed
 from multiprocessing import get_context
+from py21cmfast_tools import calculate_ps
 
 # from multiprocessing import set_start_method, Pool
 # import timeit
 import numpy as np
 import yaml
 from schwimmbad import MPIPool
+from mpl_toolkits.axes_grid1 import make_axes_locatable  # To control colorbar placement
 
 # import h5py
 import fnmatch
@@ -730,3 +732,81 @@ def extract_keys(nested_dict: dict) -> list[str]:
         if isinstance(nested_dict[key], dict):
             keys.extend(extract_keys(nested_dict[key]))
     return keys
+
+
+def plot_lc(run_names, bins, zslices, file_path_template, ignore_zero_absk):
+    zs_range = np.linspace(7, 24, zslices)
+
+    for i, name in enumerate(run_names):
+        lc = p21c.outputs.LightCone.read(file_path_template.format(i))
+
+        # Lightcone slice plot for the 4th index (i == 4)
+        if i == 4:
+            fig, _ = p21c.plotting.lightcone_sliceplot(lc)
+            fig.tight_layout()
+            fig.savefig(f'./lc_{name}.png', dpi=350)
+            fig.clf()
+
+        # Create the 2x3 plot grid
+        fig, ax = plt.subplots(2, 3, figsize=(15, 10), sharex=True, sharey=True)
+        ax = ax.flatten()
+        fig.suptitle(f'inh,ts: {name}', fontsize=16)
+
+        # Calculate the power spectrum
+        res = calculate_ps(
+            lc=lc.lightcones['brightness_temp'],
+            lc_redshifts=lc.lightcone_redshifts,
+            box_length=lc.user_params.BOX_LEN,
+            box_side_shape=lc.user_params.HII_DIM,
+            log_bins=False,
+            zs=zs_range,
+            calc_1d=True,
+            calc_2d=True,
+            kpar_bins=bins,
+            nbins=bins,
+            nbins_1d=bins,
+            bin_ave=True,
+            k_weights=ignore_zero_absk,
+            postprocess=True
+        )
+
+        ps_1d, ps_2d = res['ps_1D'], res['final_ps_2D']
+        ps_2d = np.transpose(ps_2d, axes=(0, 2, 1))[:, ::-1, :]
+        bins_1d, bins_par, bins_perp = res['k'], res['final_kpar'], res['final_kperp']
+
+        # Get global min and max values for log scaling
+        ps_min = np.min([np.min(np.log10(ps_1d)), np.min(np.log10(ps_2d))])
+        ps_max = np.max([np.max(np.log10(ps_1d)), np.max(np.log10(ps_2d))])
+
+        for j in range(zslices):
+            # Define bin edges for the 2D pcolormesh plot
+            x_edges = np.concatenate([bins_perp, [2 * bins_perp[-1] - bins_perp[-2]]])
+            y_edges = np.concatenate([bins_par, [2 * bins_par[-1] - bins_par[-2]]])
+
+            # Plot 2D power spectrum
+            div = make_axes_locatable(ax[j])
+            cbax = div.append_axes("right", size="5%", pad=0.05)
+            cb = ax[j].pcolormesh(x_edges, y_edges, np.log10(ps_2d[j]), shading='auto', vmin=ps_min, vmax=ps_max)
+            cbar = plt.colorbar(cb, cax=cbax)
+            cbar.set_label(r'Log $P(k)$ [mK]')
+
+            # Plot 1D power spectrum on a twin axis
+            ax_twin = ax[j].twinx()
+            ax_twin.plot(bins_1d, np.log10(ps_1d[j]), color='r')
+
+            # Set limits and labels
+            ax_twin.set_ylim(ps_min, ps_max)
+            ax[j].set_xlabel(r'$k_\perp$')
+            ax[j].set_ylabel(r'Log $P(k_\parallel)$ [mK]')
+            ax_twin.set_ylabel(r'Log $P(k)$ [mK]', color='r')
+            ax[j].set_title(rf'$z = $ {np.round(zs_range[j], 2)}')
+
+            # Sync x-axis limits
+            ax[j].set_xlim(bins_1d.min(), bins_1d.max())
+            ax_twin.set_xlim(bins_1d.min(), bins_1d.max())
+
+        # Adjust layout and save figure
+        plt.subplots_adjust(left=0.05, right=0.95, top=0.92, bottom=0.08, wspace=0.3, hspace=0.3)
+        fig.tight_layout()
+        fig.savefig(f'./ps_{name}.png', dpi=350)
+
