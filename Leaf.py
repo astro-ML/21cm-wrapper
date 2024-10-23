@@ -41,7 +41,7 @@ class Leaf:
         parameter_file: str = None,
         cache_path: str = None,
         debug: bool = False,
-        redshift: float = None,
+        redshift: float|tuple[float, float] = None,
         make_statistics: bool = False,
         astro_params: dict = {},
         cosmo_params: dict = {},
@@ -238,6 +238,12 @@ class Leaf:
         )
         if redshift is None:
             redshift = self.redshift
+        if type(redshift) == tuple or type(redshift) == list:
+            max_redshift = redshift[1]
+            min_redshift = redshift[0]
+        else:
+            max_redshift = None
+            min_redshift = redshift
         self.debug("Parameter successfully refreshed.")
         self.debug(
             "Current parameters are:\n"
@@ -258,7 +264,8 @@ class Leaf:
         )
         with p21c.global_params.use(**global_params):
             run = p21c.run_lightcone(
-                redshift=redshift,
+                redshift=min_redshift,
+                max_redshift=max_redshift,
                 astro_params=self.astroparams,
                 cosmo_params=self.cosmoparams,
                 user_params=self.userparams,
