@@ -320,6 +320,7 @@ class Leaf:
         user_params_range: dict = {},
         flag_options_range={},
         global_params_range: dict = {},
+        fields: list = ["brightness_temp", "density", "xH_box"],
     ) -> None:
         """Run a coevel box of 21cmFAST given the parameters.
 
@@ -377,6 +378,7 @@ class Leaf:
                 "flag_options": generate_range(flag_options_range, samplef),
                 "global_params": generate_range(global_params_range, samplef),
                 "run_id": run_id,
+                "fields": fields,
             }
             for run_id in run_ids
         ]
