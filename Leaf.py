@@ -86,7 +86,6 @@ class Leaf:
         self.dodebug = debug
 
         # make cache dir
-        cache_path = "./_cache"
         if not os.path.exists(cache_path):
             os.mkdir(cache_path)
 
