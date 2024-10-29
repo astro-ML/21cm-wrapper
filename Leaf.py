@@ -80,6 +80,7 @@ class Leaf:
 
         if cache_path is None:
             self.write_cache = False
+            cache_path = "./_cache"
         else:
             self.write_cache = True
         self.dodebug = debug
