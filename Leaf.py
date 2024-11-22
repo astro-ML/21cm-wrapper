@@ -552,7 +552,7 @@ class Leaf:
 
         OMm, HII_EFF_FACTOR, L_X, NU_X_THRESH, ION_Tvir_MIN = ([] for _ in range(5))
 
-        with alive_bar(len(files), force_tty=True) as bar:
+        with alive_bar(len(files), force_tty=True, refresh_secs=10) as bar:
             for file in files:
                 lc = p21c.outputs.LightCone.read(fname=file, direc=path)
                 OMm.append(lc.cosmo_params.OMm)

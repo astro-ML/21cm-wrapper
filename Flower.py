@@ -7,9 +7,6 @@ my_module_path = os.path.join("../", '21cm-sbi')
 sys.path.append(my_module_path)
 from dataloader import *
 
-class KeyMismatchError(Exception):
-    pass
-
 
 class Probability:
     def __init__(
@@ -20,7 +17,7 @@ class Probability:
         debug: bool = True,
         fmodel_path: str = "./mcmc_data/fiducial_ps.npy",
         summary_statistics: str = "1dps",
-        summary_net: SumnetHandler = None,
+        summary_net = None,
         z_cut: int = 680,
     ):
         """Stores the likelihood, priors and the summary statistics
@@ -102,7 +99,8 @@ class Probability:
             float: The likelihood.
         """
         fid_ps = np.load(self.fmodel_path)
-        test_ps, variance = self.summary_statistics(lightcone=lightcone)
+        fid_ps, variance = fid_ps
+        test_ps, _ = self.summary_statistics(lightcone=lightcone)
         chi2 = self.loss(test_lc=test_ps, fiducial_lc=fid_ps, var=variance)
         self.debug(f"Likelihood={chi2}")
         self.debug(f"LogLikelihood={np.log(-chi2)}")
@@ -318,7 +316,7 @@ class Simulation(Leaf):
             redshift=self.redshift,
             save=False,
             # fixed see because fiducial lightcones should look the same
-            random_seed=42,
+            #random_seed=42,
             filter_peculiar=False,
             sanity_check=True,
             )
