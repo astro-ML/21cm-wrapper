@@ -293,7 +293,7 @@ class Simulation(Leaf):
         self.data_path = data_path
         
         
-    def make_fiducial(self):
+    def make_fiducial(self, random_seed: int = None):
 
         self.debug("Search for existing fiducial lightcone...")
         
@@ -316,7 +316,7 @@ class Simulation(Leaf):
             redshift=self.redshift,
             save=False,
             # fixed see because fiducial lightcones should look the same
-            #random_seed=42,
+            random_seed=random_seed,
             filter_peculiar=False,
             sanity_check=True,
             )
