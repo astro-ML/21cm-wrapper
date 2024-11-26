@@ -211,7 +211,7 @@ class Leaf:
         user_params: dict = {},
         flag_options: dict = {},
         global_params: dict = {},
-        fields: list = ["brightness_temp", "density", "xH_box"],
+        fields: list = ("brightness_temp",),
         run_id: int = 0,
     ) -> object | None:
         """Run a coevel box of 21cmFAST given the parameters.
@@ -262,10 +262,18 @@ class Leaf:
             + "global_params: "
             + str(global_params)
         )
+        
+        lcn = p21c.RectilinearLightconer.with_equal_cdist_slices(
+        min_redshift=min_redshift,
+        max_redshift=max_redshift,
+        quantities=fields,
+        resolution=self.userparams.cell_size,
+        # index_offset=0,
+        )
+        
         with p21c.global_params.use(**global_params):
             run = p21c.run_lightcone(
-                redshift=min_redshift,
-                max_redshift=max_redshift,
+                lightconer=lcn,
                 astro_params=self.astroparams,
                 cosmo_params=self.cosmoparams,
                 user_params=self.userparams,
@@ -305,7 +313,6 @@ class Leaf:
 
     def run_lcsampling(
         self,
-        samplef: Callable,
         redshift: float = None,
         save: bool = True,
         random_seed: int = None,
@@ -344,7 +351,7 @@ class Leaf:
             quantity (int): Defines the amount of simulations being sampled
 
             *params_range: Give a dict consisting of the parameter as the key and a list passed to the samplefunction
-                            e.g. astro_params = {HII_DIM: [140, 160]} for samplef = Leaf.uniform
+                            e.g. astro_params = {HII_DIM: [samplef, 140, 160]} for samplef = Leaf.uniform
         """
         
         self.ramcheck(threads, 3, self.userparams.HII_DIM)
@@ -372,11 +379,11 @@ class Leaf:
                 "random_seed": random_seed,
                 "sanity_check": sanity_check,
                 "filter_peculiar": filter_peculiar,
-                "astro_params": generate_range(astro_params_range, samplef),
-                "cosmo_params": generate_range(cosmo_params_range, samplef),
-                "user_params": generate_range(user_params_range, samplef),
-                "flag_options": generate_range(flag_options_range, samplef),
-                "global_params": generate_range(global_params_range, samplef),
+                "astro_params": generate_range(astro_params_range),
+                "cosmo_params": generate_range(cosmo_params_range),
+                "user_params": generate_range(user_params_range),
+                "flag_options": generate_range(flag_options_range),
+                "global_params": generate_range(global_params_range),
                 "run_id": run_id,
                 "fields": fields,
             }
@@ -530,19 +537,6 @@ class Leaf:
                     dtype=int,
                 ) + offset
 
-    # predefined samplefunctions
-    @staticmethod
-    def uniform(a, b):
-        return np.random.uniform(a, b)
-
-    @staticmethod
-    def gauss(mu, sig):
-        return np.random.gauss(mu, sig)
-
-    @staticmethod
-    def gumbel(loc, scale):
-        return np.random.gumbel(loc, scale)  # <- :3
-
     @staticmethod
     def plot_parameter_distribution(
         path: str = "./data/", prefix: str = "simrun_"
@@ -686,21 +680,19 @@ class Parameters:
     def give_all(self):
         return self.input_params
 
-
-
 ### Utility funcitons ###
 
 
-def generate_range(nested_dict: dict, func: Callable) -> dict:
-    """Helper function which updates every values in a nested dict such that the values [a,b] -> func(*[a,b])"""
+def generate_range(nested_dict: dict) -> dict:
+    """Helper function which updates every values in a nested dict such that the values [func,a,b] -> func(*[a,b])"""
     if nested_dict is None:
         return None
     res = {}
     for key, value in nested_dict.items():
         if isinstance(value, dict):
-            res[key] = generate_range(value, func)
+            res[key] = generate_range(value)
         else:
-            res[key] = func(*value)
+            res[key] = value()
     return res
 
 def fill_dict(nested_dict: dict, array: NDArray, index: int = 0) -> dict:
@@ -819,3 +811,36 @@ def plot_lc(run_names, bins, zslices, file_path_template, ignore_zero_absk):
         fig.tight_layout()
         fig.savefig(f'./ps_{name}.png', dpi=350)
 
+    
+class uniform:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+        
+    def __call__(self):
+        return np.random.uniform(self.a, self.b)
+    
+class loguniform:
+    def __init__(self, a, b):
+        self.a = float(a)
+        self.b = float(b)
+        
+    def __call__(self):
+        return 10**(np.random.uniform(np.log10(self.a), np.log10(self.b)))
+
+class gauss:
+    def __init__(self, mu, sig):
+        self.mu = mu
+        self.sig = sig
+        
+    def __call__(self):
+        return np.random.gauss(self.mu, self.sig)
+    
+class gumbel: # <- :3
+    def __init__(self, loc, scale):
+        self.loc = loc
+        self.scale = scale
+        
+    def __call__(self):
+        return np.random.gumbel(self.loc, self.scale)  # <- :3
+    
