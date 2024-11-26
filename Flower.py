@@ -121,9 +121,10 @@ class Probability:
         dict2 = self.prior_ranges
 
         def compare_values(val1, range_tuple):
-            return range_tuple[0] <= val1 <= range_tuple[1]
+            return range_tuple.a <= val1 <= range_tuple.b
 
         def compare_nested(dict1, dict2):
+            print(dict1, dict2)
             for key, val in dict1.items():
                 if key not in dict2:
                     raise KeyMismatchError(
@@ -509,6 +510,7 @@ class Flower(Simulation):
         threads: int = 1,
         walkers: int = 12,
         nsteps: int = 1000,
+        continue_run: bool = False,
     ) -> None:
         """
         Run the emcee sampling.
@@ -536,7 +538,7 @@ class Flower(Simulation):
                 pool=p,
                 backend=backend,
             )
-            sampler.run_mcmc(initial_state=initial, nsteps=nsteps, progress=True)
+            sampler.run_mcmc(initial_state=None if continue_run else initial, nsteps=nsteps, progress=True)
 
     def initialize_parameter(self, shape: tuple[int, int]):
         """
@@ -549,10 +551,9 @@ class Flower(Simulation):
             np.ndarray: The initialized parameters.
         """
         initial_params = np.empty((shape))
-        # print(self.Prob.prior_ranges, self.uniform)
         for i in range(shape[0]):
             initial_params[i, :] = extract_values(
-                generate_range(self.Prob.prior_ranges, self.uniform)
+                generate_range(self.Prob.prior_ranges)
             )
         return initial_params
     
