@@ -312,14 +312,17 @@ class Simulation(Leaf):
             self.userparams.update(
             N_THREADS=os.cpu_count() if os.cpu_count() < 33 else 32
             )
-            fiducial_cone = self.run_lightcone(
-            redshift=self.redshift,
-            save=False,
-            # fixed see because fiducial lightcones should look the same
-            random_seed=random_seed,
-            filter_peculiar=False,
-            sanity_check=True,
-            )
+            # regnerate lightcone until they fulfill 5 sigma planck constraints
+            fiducial_cone = None
+            while fiducial_cone is not None:
+                fiducial_cone = self.run_lightcone(
+                redshift=[5, 35],
+                save=False,
+                # fixed see because fiducial lightcones should look the same
+                random_seed=random_seed,
+                filter_peculiar=True,
+                sanity_check=True,
+                )
             self.userparams.update(N_THREADS=temp_threads)
             if self.noise is not None:
                 if self.noise[0] == 1:

@@ -291,7 +291,7 @@ class Leaf:
                 if not self.lc_filter(
                     tau=self.tau[-1], gxH0=run.global_xH[-1], run_id=run_id
                 ):
-                    return
+                    return None
                 self.debug("Filtering passed.")
             if save:
                 self.debug(f"Saving lightcone {self.data_prefix + str(run_id)}...")
