@@ -211,7 +211,7 @@ class Probability:
 
     def ps1d(self, lightcone: object) -> NDArray:
         """Compute the 1D power spectrum.
-
+ 
         Args:
             lightcone (object): The lightcone object.
 
@@ -261,7 +261,7 @@ class Simulation(Leaf):
         self,
         Probability: Probability,
         redshift: float,
-        data_path: str = "./mcmc_data/",
+        data_path: str = "./mcmc_data/z",
         noise_type: tuple = None,
         debug: bool = False,
         regenerate_fiducial: bool = True,
@@ -315,7 +315,7 @@ class Simulation(Leaf):
             )
             # regnerate lightcone until they fulfill 5 sigma planck constraints
             fiducial_cone = None
-            while fiducial_cone is not None:
+            while fiducial_cone is None:
                 fiducial_cone = self.run_lightcone(
                 redshift=[5, 35],
                 save=False,

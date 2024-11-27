@@ -30,7 +30,7 @@ import warnings
 
 
 # circumvent problems caused by some numpy builds messing with ProcessPoolExecuter
-os.environ["OMP_NUM_THREADS"] = "1"
+#os.environ["OMP_NUM_THREADS"] = "1"
 
 
 class Leaf:
@@ -133,11 +133,11 @@ class Leaf:
         save: bool = True,
         random_seed: int = None,
         sanity_check: bool = False,
-        astro_params: dict = None,
-        cosmo_params: dict = None,
-        user_params: dict = None,
-        flag_options: dict = None,
-        global_params: dict = None,
+        astro_params: dict = {},
+        cosmo_params: dict = {},
+        user_params: dict = {},
+        flag_options: dict = {},
+        global_params: dict = {},
         run_id: int = 0,
     ) -> object | None:
         """Run a coevel box of 21cmFAST given the parameters.
