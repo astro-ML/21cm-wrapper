@@ -6,6 +6,7 @@ import dynesty
 my_module_path = os.path.join("../", '21cm-sbi')
 sys.path.append(my_module_path)
 from dataloader import *
+import glob
 
 
 class Probability:
@@ -400,8 +401,7 @@ class Simulation(Leaf):
                     test_lc.lightcones['brightness_temp'] , *self.noise[1:]
                 )
             elif self.noise[0] == 2:
-                print("Better noise model here")
-                # test_lc.lightcones['brightness_temp']  = Simulation.gaussian_noise(test_lc.lightcones['brightness_temp'] , **self.noise[1:])
+                test_lc.lightcones['brightness_temp']  = self.add_mock_noise(test_lc.lightcones['brightness_temp'] , **self.noise[1:])
             else:
                 print("Noise-type not found you gave: ", self.noise)
         # compute probability
@@ -423,6 +423,102 @@ class Simulation(Leaf):
             NDArray: The data with added Gaussian noise.
         """
         return data + np.random.normal(mu, sigma, data.shape)
+    
+    @staticmethod
+    def read_noise_files(path, noise_level) -> list:
+        """
+        Read noise files based on the noise level specified in the parameters.
+        
+        Returns:
+            list: List of filenames for the noise data.
+        """
+        if noise_level == "opt":
+            files = glob.glob(f"{path}/twentyone_cm_pie/generate_data/calcfiles/opt_mocks/SKA1_Lowtrack_6.0hr_opt_0.*_LargeHII_Pk_Ts1_Tb9_nf0.52_v2.npz")
+        elif noise_level == "mod":
+            files = glob.glob(f"{path}/twentyone_cm_pie/generate_data/calcfiles/mod_mocks/SKA1_Lowtrack_6.0hr_mod_0.*_LargeHII_Pk_Ts1_Tb9_nf0.52_v2.npz")
+        else:
+            logging.info("Please choose a valid foreground model")
+            sys.exit()
+        files.sort(reverse=True)
+        return files
+            
+    def add_mock_noise(self, lightcone, path: str, noise_level: str = "opt") -> np.ndarray:
+        """
+        Add noise to the simulation.
+        
+        Args:
+            brightness_temp (np.ndarray): The brightness temperature data.
+            parameters (np.array): The simulation parameters.
+        
+        Returns:
+            np.ndarray: The brightness temperature data with added noise.
+        """
+        if path[-1] == "/":
+            path = path[:-1]
+            
+        logging.info('Create mock')
+        with open(f"{path}/twentyone_cm_pie/generate_data/redshifts5.npy", "rb") as data:
+            box_redshifts = list(np.load(data, allow_pickle=True))
+            box_redshifts.sort()
+
+        redshifts = lightcone.lightcone_redshifts
+        brightness_temp = lightcone.brightness_temp
+        box_len = np.array([])
+        y = 0
+        z = 0
+        for x in range(len(brightness_temp[0][0])):
+            if (redshifts[x] > (box_redshifts[y + 1] + box_redshifts[y]) / 2) and x - z > 0:
+                box_len = np.append(box_len, x - z)
+                y += 1
+                z = x
+        box_len = np.append(box_len, x - z + 1)
+        y = 0
+        delta_T_split = []
+        for x in box_len:
+            delta_T_split.append(brightness_temp[:,:,int(y):int(x+y)])
+            y+=x
+        mock_lc = np.zeros(brightness_temp.shape)
+        cell_size = lightcone.user_params.cell_size.value
+        hii_dim = lightcone.user_params.HII_DIM
+        k140 = np.fft.fftfreq(hii_dim, d=cell_size / 2. / np.pi)
+        index1 = 0
+        index2 = 0
+        files = read_noise_files(path, noise_level)
+        for x in range(len(box_len)):
+            with np.load(files[x]) as data:
+                ks = data["ks"]
+                T_errs = data["T_errs"]
+            kbox = np.fft.rfftfreq(int(box_len[x]), d=cell_size / 2. / np.pi)
+            volume = hii_dim * hii_dim * box_len[x] * cell_size ** 3
+            err21a = np.random.normal(loc=0.0, scale=1.0, size=(hii_dim, hii_dim, int(box_len[x])))
+            err21b = np.random.normal(loc=0.0, scale=1.0, size=(hii_dim, hii_dim, int(box_len[x])))
+            deldel_T = np.fft.rfftn(delta_T_split[x], s=(hii_dim, hii_dim, int(box_len[x])))
+            deldel_T_noise = np.zeros((hii_dim, hii_dim, int(box_len[x])), dtype=np.complex_)
+            deldel_T_mock = np.zeros((hii_dim, hii_dim, int(box_len[x])), dtype=np.complex_)
+            
+            for n_x in range(hii_dim):
+                for n_y in range(hii_dim):
+                    for n_z in range(int(box_len[x] / 2 + 1)):
+                        k_mag = np.sqrt(k140[n_x] ** 2 + k140[n_y] ** 2 + kbox[n_z] ** 2)
+                        err21 = np.interp(k_mag, ks, T_errs)
+                        
+                        if k_mag:
+                            deldel_T_noise[n_x, n_y, n_z] = np.sqrt(np.pi * np.pi * volume / k_mag ** 3 * err21) * (err21a[n_x, n_y, n_z] + err21b[n_x, n_y, n_z] * 1j)
+                        else:
+                            deldel_T_noise[n_x, n_y, n_z] = 0
+                        
+                        if err21 >= 1000:
+                            deldel_T_mock[n_x, n_y, n_z] = 0
+                        else:
+                            deldel_T_mock[n_x, n_y, n_z] = deldel_T[n_x, n_y, n_z] + deldel_T_noise[n_x, n_y, n_z] / cell_size ** 3
+            
+            delta_T_mock = np.fft.irfftn(deldel_T_mock, s=(hii_dim, hii_dim, box_len[x]))
+            index1 = index2
+            index2 += delta_T_mock.shape[2]
+            mock_lc[:, :, index1:index2] = delta_T_mock
+            if x % 5 == 0:
+                logging.info(f'mock created to {int(100 * index2 / 2350)}%')
+        return mock_lc
 
     @staticmethod
     def replace_values(nested_dict, values_array):
