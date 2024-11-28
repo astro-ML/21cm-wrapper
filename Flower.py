@@ -316,6 +316,10 @@ class Simulation(Leaf):
             # regnerate lightcone until they fulfill 5 sigma planck constraints
             fiducial_cone = None
             while fiducial_cone is None:
+                self.astroparams.update(
+                    **{key: self.Probability.prior_ranges["astro_params"][key]() for key in self.Probability.prior_ranges['astro_params'].keys()
+}
+                )
                 fiducial_cone = self.run_lightcone(
                 redshift=[5, 35],
                 save=False,
