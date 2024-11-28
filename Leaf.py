@@ -76,7 +76,10 @@ class Leaf:
         self.data_path = data_path
         self.data_prefix = data_prefix
         if not os.path.exists(self.data_path):
-            os.mkdir(self.data_path)
+            try:
+                os.mkdir(self.data_path)
+            except:
+                print()
 
         if cache_path is None:
             self.write_cache = False
@@ -87,7 +90,10 @@ class Leaf:
 
         # make cache dir
         if not os.path.exists(cache_path):
-            os.mkdir(cache_path)
+            try:
+                os.mkdir(cache_path)
+            except:
+                print()
 
         p21c.config["direc"] = cache_path
         # cache_tools.clear_cache(direc=cache_path) # <- clear cache
@@ -297,7 +303,7 @@ class Leaf:
             if filter_peculiar:
                 self.debug("Filter according to 5 sigma Planck cosmo...")
                 if not self.lc_filter(
-                    tau=self.tau[-1], gxH0=run.global_xH[-1], run_id=run_id
+                    tau=self.tau, gxH0=run.global_xH, node_redshift = run.node_redshifts, run_id=run_id
                 ):
                     return None
                 self.debug("Filtering passed.")
@@ -494,11 +500,13 @@ class Leaf:
             else p21c.outputs.Coeval.read(path_to_obj)
         )
 
-    def lc_filter(self, tau: float, gxH0: float, run_id: int) -> bool:
+    def lc_filter(self, tau: float, gxH0: float, node_redshift, run_id: int) -> bool:
         """Apply tau and global nvalueeutral fraction at z=5 (gxH[0]) filters according to
         https://github.com/astro-ML/3D-21cmPIE-Net/blob/main/simulations/runSimulations.py
         """
-        if tau > 0.089 or gxH0 > 0.1:
+        z_min = find_nearest_index(node_redshift, 5)
+        z_max = find_nearest_index(node_redshift, 9)
+        if (tau[z_min] > 0.089 or gxH0[z_min] > 0.1) or gxH0[z_max] < 0.1:
             self.debug("Lightcone rejected." + f" {tau=} " + f" {gxH0=} ")
             if self.make_statistics:
                 self.filtercounter.append(
@@ -844,3 +852,7 @@ class gumbel: # <- :3
     def __call__(self):
         return np.random.gumbel(self.loc, self.scale)  # <- :3
     
+def find_nearest_index(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx

@@ -224,7 +224,7 @@ class Probability:
                            lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, 
                            box_side_shape=lightcone.user_params.HII_DIM,
-                           log_bins=False, zs = self.z_eval, 
+                           log_bins=False, chunk_size=263,chunk_skip=263, 
                            calc_1d=True, calc_2d=False, get_variance=True,
                            nbins_1d=self.bins, bin_ave=True, 
                            k_weights=ignore_zero_absk,postprocess=True)
@@ -243,7 +243,7 @@ class Probability:
         
         res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
-                           log_bins=False, zs = self.z_eval, calc_1d=False, calc_2d=True, get_variance=True,
+                           log_bins=False, chunk_size=263,chunk_skip=263, calc_1d=False, calc_2d=True, get_variance=True,
                            nbins=self.bins, bin_ave=True, k_weights=ignore_zero_absk, postprocess=True)
         return res['final_ps_2D'], res['full_var_2D']
 
@@ -337,7 +337,7 @@ class Simulation(Leaf):
                         fiducial_cone.lightcones['brightness_temp'] , *self.noise[1:]
                     )
                 elif self.noise[0] == 2:
-                    test_lc  = self.add_mock_noise(test_lc , **self.noise[1:])
+                    test_lc  = self.add_mock_noise(fiducial_cone , **self.noise[1:])
                 else:
                     print("Noise-type not found you gave: ", self.noise)
             self.save(
@@ -611,6 +611,7 @@ class Flower(Simulation):
         walkers: int = 12,
         nsteps: int = 1000,
         continue_run: bool = False,
+        nun_num: int = 0,
     ) -> None:
         """
         Run the emcee sampling.
@@ -624,7 +625,7 @@ class Flower(Simulation):
         self.debug("Starting emcee sampling...")
         ndim = num_elements(self.Prob.prior_ranges)
         self.debug("Number of parameters: " + str(ndim))
-        backend = emcee.backends.HDFBackend(filename=self.data_path + filename)
+        backend = emcee.backends.HDFBackend(filename=self.data_path + filename + nun_num)
         initial = self.initialize_parameter((walkers, ndim))
         self.debug("Initial parameters: " + str(initial))
         schwimmhalle = Pool(
