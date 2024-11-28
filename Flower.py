@@ -337,8 +337,7 @@ class Simulation(Leaf):
                         fiducial_cone.lightcones['brightness_temp'] , *self.noise[1:]
                     )
                 elif self.noise[0] == 2:
-                    print("Better noise model here")
-                    # test_lc.lightcones['brightness_temp']  = Simulation.gaussian_noise(test_lc.lightcones['brightness_temp'] , **self.noise[1:])
+                    test_lc  = self.add_mock_noise(test_lc , **self.noise[1:])
                 else:
                     print("Noise-type not found you gave: ", self.noise)
             self.save(
@@ -347,7 +346,7 @@ class Simulation(Leaf):
 
             self.debug("New lightcone successfully computed and saved.")
 
-        if np.isnan(fiducial_cone.lightcones['brightness_temp'] ).any(): 
+        if np.isnan(fiducial_cone.lightcones['brightness_temp'] ).any():
             raise ValueError("Brightness temperature contains NaNs!" + 
                                 "Please check your parameters and try again")
 
@@ -405,7 +404,7 @@ class Simulation(Leaf):
                     test_lc.lightcones['brightness_temp'] , *self.noise[1:]
                 )
             elif self.noise[0] == 2:
-                test_lc.lightcones['brightness_temp']  = self.add_mock_noise(test_lc.lightcones['brightness_temp'] , **self.noise[1:])
+                test_lc  = self.add_mock_noise(test_lc , **self.noise[1:])
             else:
                 print("Noise-type not found you gave: ", self.noise)
         # compute probability
@@ -522,7 +521,8 @@ class Simulation(Leaf):
             mock_lc[:, :, index1:index2] = delta_T_mock
             if x % 5 == 0:
                 logging.info(f'mock created to {int(100 * index2 / 2350)}%')
-        return mock_lc
+        lightcone.lightcones['brightness_temp'] = mock_lc
+        return lightcone
 
     @staticmethod
     def replace_values(nested_dict, values_array):
