@@ -297,7 +297,7 @@ class Leaf:
             if filter_peculiar:
                 self.debug("Filter according to 5 sigma Planck cosmo...")
                 if not self.lc_filter(
-                    tau=self.tau[-1], gxH0=run.global_xH[-1], run_id=run_id
+                    tau=self.tau, gxH0=run.global_xH , run_id=run_id
                 ):
                     return None
                 self.debug("Filtering passed.")
@@ -437,6 +437,12 @@ class Leaf:
     def debug(self, msg: str = ""):
         if self.dodebug:
             print(msg)
+    
+    @staticmethod
+    def find_nearest_index(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
 
     def nan_adversary(self, bt_cone: NDArray, run_id: int) -> NDArray:
         nans = np.isnan(bt_cone)
@@ -494,11 +500,11 @@ class Leaf:
             else p21c.outputs.Coeval.read(path_to_obj)
         )
 
-    def lc_filter(self, tau: float, gxH0: float, run_id: int) -> bool:
+    def lc_filter(self, tau, gxH0, run_id: int) -> bool:
         """Apply tau and global nvalueeutral fraction at z=5 (gxH[0]) filters according to
         https://github.com/astro-ML/3D-21cmPIE-Net/blob/main/simulations/runSimulations.py
         """
-        if tau > 0.089 or gxH0 > 0.1:
+        if tau[-1] > 0.089 or gxH0[-1] > 0.1:
             self.debug("Lightcone rejected." + f" {tau=} " + f" {gxH0=} ")
             if self.make_statistics:
                 self.filtercounter.append(
