@@ -244,8 +244,8 @@ class Probability:
         res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
                            log_bins=False, chunk_size=263,chunk_skip=263, calc_1d=False, calc_2d=True, get_variance=True,
-                           nbins=self.bins, bin_ave=True, k_weights=ignore_zero_absk, postprocess=True)
-        return res['final_ps_2D'], res['full_var_2D']
+                           nbins=self.bins, kpar_bins=self.bins, bin_ave=True, k_weights=ignore_zero_absk, postprocess=True)
+        return res['final_ps_2D'], res['final_var_2D']
 
     def debug(self, msg):
         """Print the debug message.
@@ -312,22 +312,25 @@ class Simulation(Leaf):
             
             temp_threads = self.userparams.N_THREADS
             self.userparams.update(
-            N_THREADS=os.cpu_count() if os.cpu_count() < 33 else 32
+            N_THREADS=os.cpu_count() if os.cpu_count() < 17 else 16
             )
             # regnerate lightcone until they fulfill 5 sigma planck constraints
             fiducial_cone = None
+            i = 0
             while fiducial_cone is None:
-                self.astroparams.update(
-                    **{key: self.Probability.prior_ranges["astro_params"][key]() for key in self.Probability.prior_ranges['astro_params'].keys()
-}
-                )
+                print(f"run {i}")
+                i += 1
+                new_apa = {key: self.Probability.prior_ranges["astro_params"][key]() for key in self.Probability.prior_ranges['astro_params'].keys()
+                        }
+                print(new_apa)
                 fiducial_cone = self.run_lightcone(
-                redshift=[5, 35],
+                redshift=[5, 20],
                 save=False,
                 # fixed see because fiducial lightcones should look the same
-                random_seed=random_seed,
+                #random_seed=random_seed,
                 filter_peculiar=True,
                 sanity_check=True,
+                astro_params = new_apa
                 )
             self.userparams.update(N_THREADS=temp_threads)
             if self.noise is not None:
@@ -337,7 +340,7 @@ class Simulation(Leaf):
                         fiducial_cone.lightcones['brightness_temp'] , *self.noise[1:]
                     )
                 elif self.noise[0] == 2:
-                    test_lc  = self.add_mock_noise(fiducial_cone , **self.noise[1:])
+                    fiducial_cone  = self.add_mock_noise(fiducial_cone , *self.noise[1:])
                 else:
                     print("Noise-type not found you gave: ", self.noise)
             self.save(
@@ -361,7 +364,6 @@ class Simulation(Leaf):
             if self.regenerate_fiducial and (len(self.ps_file) != 0):
                 os.remove(self.data_path + "fiducial_ps.npy")
 
-            # 1dps hardcoded change to generic summary statistic in the future
             self.fiducial_ps = self.Probability.summary_statistics(fiducial_cone)
             np.save(self.data_path + "fiducial_ps.npy", self.fiducial_ps)
 
@@ -404,7 +406,7 @@ class Simulation(Leaf):
                     test_lc.lightcones['brightness_temp'] , *self.noise[1:]
                 )
             elif self.noise[0] == 2:
-                test_lc  = self.add_mock_noise(test_lc , **self.noise[1:])
+                test_lc  = self.add_mock_noise(test_lc , *self.noise[1:])
             else:
                 print("Noise-type not found you gave: ", self.noise)
         # compute probability
@@ -486,7 +488,7 @@ class Simulation(Leaf):
         k140 = np.fft.fftfreq(hii_dim, d=cell_size / 2. / np.pi)
         index1 = 0
         index2 = 0
-        files = read_noise_files(path, noise_level)
+        files = Flower.read_noise_files(path, noise_level)
         for x in range(len(box_len)):
             with np.load(files[x]) as data:
                 ks = data["ks"]

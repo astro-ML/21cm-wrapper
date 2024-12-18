@@ -303,7 +303,7 @@ class Leaf:
             if filter_peculiar:
                 self.debug("Filter according to 5 sigma Planck cosmo...")
                 if not self.lc_filter(
-                    tau=self.tau, gxH0=run.global_xH, node_redshift = run.node_redshifts, run_id=run_id
+                    tau=np.array(self.tau), gxH0=np.array(run.global_xH), node_redshift = np.array(run.node_redshifts), run_id=run_id
                 ):
                     return None
                 self.debug("Filtering passed.")
@@ -506,7 +506,7 @@ class Leaf:
         """
         z_min = find_nearest_index(node_redshift, 5)
         z_max = find_nearest_index(node_redshift, 9)
-        if (tau[z_min] > 0.089 or gxH0[z_min] > 0.1) or gxH0[z_max] < 0.1:
+        if (tau[0] > 0.089 or gxH0[z_min] > 0.01) or gxH0[z_max] < 0.1:
             self.debug("Lightcone rejected." + f" {tau=} " + f" {gxH0=} ")
             if self.make_statistics:
                 self.filtercounter.append(
