@@ -3,9 +3,6 @@ from py21cmfast_tools import calculate_ps
 from powerbox.tools import ignore_zero_absk
 import emcee
 import dynesty
-my_module_path = os.path.join("../", '21cm-sbi')
-sys.path.append(my_module_path)
-from dataloader import *
 import glob
 
 
@@ -56,6 +53,17 @@ class Probability:
                 return d
 
         self.parameter = replace_lists_with_zero(prior_ranges.copy())
+        
+        self.mask2d = np.ones((8, 10, 11))
+        self.mask2d[5,-1,:] = 0
+        self.mask2d[6,-2:,:] = 0
+        self.mask2d[7,-4:,:] = 0
+        
+        self.mask1d = np.ones((8, 12))
+        self.mask1d[4,-1] = 0
+        self.mask1d[5, -1] = 0
+        self.mask1d[6, -2:] = 0
+        self.mask1d[7, -4:] = 0
 
     def summary_statistics(self, lightcone: object):
         """Compute the summary statistics based on the specified type.
@@ -102,7 +110,12 @@ class Probability:
         fid_ps = np.load(self.fmodel_path)
         fid_ps, variance = fid_ps
         test_ps, _ = self.summary_statistics(lightcone=lightcone)
-        chi2 = self.loss(test_lc=test_ps, fiducial_lc=fid_ps, var=variance)
+        
+        if self.sum_stat == "1dps":
+            mask = self.mask1d 
+        elif self.sum_stat == "2dps":
+            mask = self.mask2d
+        chi2 = self.loss(test_lc=test_ps, fiducial_lc=fid_ps, var=variance, mask=mask)
         self.debug(f"Likelihood={chi2}")
         self.debug(f"LogLikelihood={np.log(-chi2)}")
         return chi2
@@ -128,12 +141,12 @@ class Probability:
             print(dict1, dict2)
             for key, val in dict1.items():
                 if key not in dict2:
-                    raise KeyMismatchError(
+                    raise KeyError(
                         f"Key '{key}' found in dict1 but not in dict2"
                     )
                 if isinstance(val, dict):
                     if not isinstance(dict2[key], dict):
-                        raise KeyMismatchError(
+                        raise KeyError(
                             f"Value for key '{key}' is a dict in dict1 but not in dict2"
                         )
                     if not compare_nested(val, dict2[key]):
@@ -159,7 +172,7 @@ class Probability:
         res = self.prior_emcee(parameters)
         return 0 if res else - np.inf
 
-    def loss(self, test_lc, fiducial_lc, var):
+    def loss(self, test_lc, fiducial_lc, var, mask):
         """Compute the loss function.
             shape must be [bins, [data, variance], *data] = (bins, 2, *data)
             We also assume implicit Gaussian prior, which for large data isn't
@@ -174,10 +187,11 @@ class Probability:
             float: The loss value.
         """
         print("computing loss")
-        sig = np.sqrt(var) + 1 # np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
-        loss = - 0.5*np.sum( (test_lc - fiducial_lc)**2 
+        sig = np.sqrt(var) # np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
+        loss = - 0.5*np.sum(( (test_lc - fiducial_lc)**2 
                             / sig
-                            + np.log(sig))
+                            - np.log(sig))*mask)
+        logging.info(f"loss = {info}")
         return loss
 
     def prior_dynasty(self, parameters: NDArray) -> NDArray:
@@ -226,7 +240,7 @@ class Probability:
                            box_side_shape=lightcone.user_params.HII_DIM,
                            log_bins=False, chunk_size=263,chunk_skip=263, 
                            calc_1d=True, calc_2d=False, get_variance=True,
-                           nbins_1d=self.bins, bin_ave=True, 
+                           nbins_1d=12, bin_ave=True, 
                            k_weights=ignore_zero_absk,postprocess=True)
         return res['ps_1D'], res['var_1D']
 
@@ -244,7 +258,7 @@ class Probability:
         res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
                            log_bins=False, chunk_size=263,chunk_skip=263, calc_1d=False, calc_2d=True, get_variance=True,
-                           nbins=self.bins, kpar_bins=self.bins, bin_ave=True, k_weights=ignore_zero_absk, postprocess=True)
+                           nbins=10, kpar_bins=12, bin_ave=True, k_weights=ignore_zero_absk, postprocess=True)
         return res['final_ps_2D'], res['final_var_2D']
 
     def debug(self, msg):
@@ -627,7 +641,7 @@ class Flower(Simulation):
         self.debug("Starting emcee sampling...")
         ndim = num_elements(self.Prob.prior_ranges)
         self.debug("Number of parameters: " + str(ndim))
-        backend = emcee.backends.HDFBackend(filename=self.data_path + filename + nun_num)
+        backend = emcee.backends.HDFBackend(filename=self.data_path + filename + str(nun_num))
         initial = self.initialize_parameter((walkers, ndim))
         self.debug("Initial parameters: " + str(initial))
         schwimmhalle = Pool(

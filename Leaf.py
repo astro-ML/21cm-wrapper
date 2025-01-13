@@ -2,6 +2,8 @@ import py21cmfast as p21c
 from matplotlib import pyplot as plt
 import logging, os, sys
 
+from logging import info
+
 logger = logging.getLogger("21cmFAST")
 logger.setLevel(logging.INFO)
 # from py21cmfast import plotting
@@ -15,7 +17,6 @@ from py21cmfast_tools import calculate_ps
 # import timeit
 import numpy as np
 import yaml
-from schwimmbad import MPIPool
 from mpl_toolkits.axes_grid1 import make_axes_locatable  # To control colorbar placement
 
 # import h5py
