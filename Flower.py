@@ -238,7 +238,7 @@ class Probability:
                            lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, 
                            box_side_shape=lightcone.user_params.HII_DIM,
-                           log_bins=False, chunk_size=263,chunk_skip=263, 
+                           log_bins=False, chunk_size=160,chunk_skip=160, 
                            calc_1d=True, calc_2d=False, get_variance=True,
                            nbins_1d=12, bin_ave=True, 
                            k_weights=ignore_zero_absk,postprocess=True)
@@ -257,7 +257,7 @@ class Probability:
         
         res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , lc_redshifts=lightcone.lightcone_redshifts, 
                            box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
-                           log_bins=False, chunk_size=263,chunk_skip=263, calc_1d=False, calc_2d=True, get_variance=True,
+                           log_bins=False, chunk_size=160,chunk_skip=160, calc_1d=False, calc_2d=True, get_variance=True,
                            nbins=10, kpar_bins=12, bin_ave=True, k_weights=ignore_zero_absk, postprocess=True)
         return res['final_ps_2D'], res['final_var_2D']
 
