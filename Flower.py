@@ -54,16 +54,6 @@ class Probability:
 
         self.parameter = replace_lists_with_zero(prior_ranges.copy())
         
-        self.mask2d = np.ones((8, 10, 11))
-        self.mask2d[5,-1,:] = 0
-        self.mask2d[6,-2:,:] = 0
-        self.mask2d[7,-4:,:] = 0
-        
-        self.mask1d = np.ones((8, 12))
-        self.mask1d[4,-1] = 0
-        self.mask1d[5, -1] = 0
-        self.mask1d[6, -2:] = 0
-        self.mask1d[7, -4:] = 0
 
     def summary_statistics(self, lightcone: object):
         """Compute the summary statistics based on the specified type.
@@ -111,11 +101,7 @@ class Probability:
         fid_ps, variance = fid_ps
         test_ps, _ = self.summary_statistics(lightcone=lightcone)
         
-        if self.sum_stat == "1dps":
-            mask = self.mask1d 
-        elif self.sum_stat == "2dps":
-            mask = self.mask2d
-        chi2 = self.loss(test_lc=test_ps, fiducial_lc=fid_ps, var=variance, mask=mask)
+        chi2 = self.loss(test_lc=test_ps, fiducial_lc=fid_ps, var=variance)
         self.debug(f"Likelihood={chi2}")
         self.debug(f"LogLikelihood={np.log(-chi2)}")
         return chi2
@@ -172,7 +158,7 @@ class Probability:
         res = self.prior_emcee(parameters)
         return 0 if res else - np.inf
 
-    def loss(self, test_lc, fiducial_lc, var, mask):
+    def loss(self, test_lc, fiducial_lc, var):
         """Compute the loss function.
             shape must be [bins, [data, variance], *data] = (bins, 2, *data)
             We also assume implicit Gaussian prior, which for large data isn't
@@ -190,7 +176,7 @@ class Probability:
         sig = np.sqrt(var) # np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
         loss = - 0.5*np.sum(( (test_lc - fiducial_lc)**2 
                             / sig
-                            - np.log(sig))*mask)
+                            - np.log(sig)))
         logging.info(f"loss = {info}")
         return loss
 
@@ -226,23 +212,49 @@ class Probability:
 
     def ps1d(self, lightcone: object) -> NDArray:
         """Compute the 1D power spectrum.
- 
+
         Args:
-            lightcone (object): The lightcone object.
+            data: The data.
+            size: The size of the data.
 
         Returns:
-            NDArray: The computed 1D power spectrum.
+            NDArray: The computed 2D power spectrum.
         """
+        lc_zs = np.array(lightcone.lightcone_redshifts)
+        res_1d, res_1derr = np.empty((3,10)), np.empty((3,10))
 
-        res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , 
-                           lc_redshifts=lightcone.lightcone_redshifts, 
-                           box_length=lightcone.user_params.BOX_LEN, 
-                           box_side_shape=lightcone.user_params.HII_DIM,
-                           log_bins=False, chunk_size=160,chunk_skip=160, 
-                           calc_1d=True, calc_2d=False, get_variance=True,
-                           nbins_1d=12, bin_ave=True, 
-                           k_weights=ignore_zero_absk,postprocess=True)
-        return res['ps_1D'], res['var_1D']
+        ks = np.array([
+        0,
+        5.000000e-02,
+        1.000000e-01,
+        1.500000e-01,
+        2.000000e-01,
+        2.500000e-01,
+        3.000000e-01,
+        3.500000e-01,
+        4.000000e-01,
+        4.500000e-01,
+        5.000000e-01,
+        ]) + 2.5e-2
+        
+        for k, (high,low) in enumerate([(8.41,7.56), (7.56,6.85), (6.85,6.25)]):
+            idx_low = find_nearest_index(lc_zs,low)
+            idx_high = find_nearest_index(lc_zs,high )
+            chunksize = idx_high-idx_low
+            z_mid = np.mean([lc_zs[idx_low],lc_zs[idx_high]])
+            
+            res = calculate_ps(lc = lightcone.brightness_temp , 
+                        lc_redshifts=lightcone.lightcone_redshifts, 
+                        box_length=lightcone.user_params.BOX_LEN, 
+                        box_side_shape=lightcone.user_params.HII_DIM,
+                        log_bins=False, zs = (z_mid,), 
+                        chunk_size=chunksize,
+                        calc_1d=True, calc_2d=False, get_variance=True,
+                        nbins_1d=ks, bin_ave=True, 
+                        k_weights=ignore_zero_absk, postprocess=True)
+            res_1d[k] = res['ps_1D'][0]
+            res_1derr[k] = res['var_1D'][0]
+        return res_1d, res_1derr
 
     def ps2d(self, lightcone: object) -> NDArray:
         """Compute the 2D power spectrum.
@@ -254,12 +266,55 @@ class Probability:
         Returns:
             NDArray: The computed 2D power spectrum.
         """
+        lc_zs = np.array(lightcone.lightcone_redshifts)
+        res_2d, res_2derr = np.empty((3,10,10)), np.empty((3,10,10))
+
+        kpar = np.array([
+        0,
+        5.000000e-02,
+        1.000000e-01,
+        1.500000e-01,
+        2.000000e-01,
+        2.500000e-01,
+        3.000000e-01,
+        3.500000e-01,
+        4.000000e-01,
+        4.500000e-01,
+        5.000000e-01,
+        ]) + 2.5e-2
+
+        kperp = np.array([
+        0,
+        5.000000e-02,
+        1.000000e-01,
+        1.500000e-01,
+        2.000000e-01,
+        2.500000e-01,
+        3.000000e-01,
+        3.500000e-01,
+        4.000000e-01,
+        4.500000e-01,
+        5.000000e-01,
+        ]) + 2.5e-2
         
-        res = calculate_ps(lc = lightcone.lightcones['brightness_temp'] , lc_redshifts=lightcone.lightcone_redshifts, 
-                           box_length=lightcone.user_params.BOX_LEN, box_side_shape=lightcone.user_params.HII_DIM,
-                           log_bins=False, chunk_size=160,chunk_skip=160, calc_1d=False, calc_2d=True, get_variance=True,
-                           nbins=10, kpar_bins=12, bin_ave=True, k_weights=ignore_zero_absk, postprocess=True)
-        return res['final_ps_2D'], res['final_var_2D']
+        for k, (high,low) in enumerate([(8.41,7.56), (7.56,6.85), (6.85,6.25)]):
+            idx_low = find_nearest_index(lc_zs,low)
+            idx_high = find_nearest_index(lc_zs,high )
+            chunksize = idx_high-idx_low
+            z_mid = np.mean([lc_zs[idx_low],lc_zs[idx_high]])
+            
+            res = calculate_ps(lc = lightcone.brightness_temp , 
+                        lc_redshifts=lightcone.lightcone_redshifts, 
+                        box_length=lightcone.user_params.BOX_LEN, 
+                        box_side_shape=lightcone.user_params.HII_DIM,
+                        log_bins=False, zs = (z_mid,), 
+                        chunk_size=chunksize,
+                        calc_1d=False, calc_2d=True, get_variance=True,
+                        nbins=kperp, kpar_bins = kpar, bin_ave=True, 
+                        k_weights=ignore_zero_absk,postprocess=True)
+            res_2d[k] = res['final_ps_2D'][0]
+            res_2derr[k] = res['final_var_2D'][0]
+        return res_2d, res_2derr
 
     def debug(self, msg):
         """Print the debug message.
@@ -338,7 +393,7 @@ class Simulation(Leaf):
                         }
                 print(new_apa)
                 fiducial_cone = self.run_lightcone(
-                redshift=[5, 20],
+                redshift=[5.5, 12],
                 save=False,
                 # fixed see because fiducial lightcones should look the same
                 #random_seed=random_seed,
