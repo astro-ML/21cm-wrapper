@@ -27,6 +27,7 @@ from alive_progress import alive_bar
 import pickle
 import psutil
 import warnings
+from logging import info, warning, error
 
 
 # circumvent problems caused by some numpy builds messing with ProcessPoolExecuter
@@ -100,6 +101,8 @@ class Leaf:
         self.cosmoparams = p21c.inputs.CosmoParams(**cosmo_params)
         self.flagparams = p21c.inputs.FlagOptions(**flag_options)
         self.globalparams = global_params
+        if "M_WDM" in self.globalparams and "P_CUTOFF" not in self.globalparams:
+            warning("ATTENTION: M_WDM set but P_CUTOFF not. P_CUTOFF defaults to 0 meaning M_WDM won't be considered!!!")
         self.userparams = p21c.inputs.UserParams(**user_params)
 
         # init satistics
