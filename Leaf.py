@@ -28,6 +28,7 @@ from alive_progress import alive_bar
 import pickle
 import psutil
 import warnings
+import astropy.units as u
 
 
 # circumvent problems caused by some numpy builds messing with ProcessPoolExecuter
@@ -269,7 +270,8 @@ class Leaf:
             + "global_params: "
             + str(global_params)
         )
-        
+
+        '''
         lcn = p21c.RectilinearLightconer.with_equal_cdist_slices(
         min_redshift=min_redshift,
         max_redshift=max_redshift,
@@ -277,6 +279,12 @@ class Leaf:
         resolution=self.userparams.cell_size,
         # index_offset=0,
         )
+        hack in initialcons
+        '''
+        freq_array = np.arange(start_freq.value, stop_freq.value + step_size.value, step_size.value) * u.MHz
+        user_params = p21c.UserParams(BOX_LEN=700, HII_DIM=350)
+        lcn = p21c.RectilinearLightconer.from_frequencies(freqs=freq_array)
+        
         
         with p21c.global_params.use(**global_params):
             run = p21c.run_lightcone(
