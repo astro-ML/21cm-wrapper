@@ -4,6 +4,7 @@ from powerbox.tools import ignore_zero_absk
 import emcee
 import dynesty
 import glob
+from schwimmbad import MPIPool
 
 
 class Probability:
@@ -17,6 +18,7 @@ class Probability:
         summary_statistics: str = "1dps",
         summary_net = None,
         z_cut: int = 680,
+        in_K = False
     ):
         """Stores the likelihood, priors and the summary statistics
 
@@ -37,6 +39,7 @@ class Probability:
         self.prior_ranges = prior_ranges
         self.sum_stat = summary_statistics
         self.z_cut = 680
+        self.in_K = in_K
         
         if summary_net is None:
             self.sum_net = False
@@ -173,10 +176,18 @@ class Probability:
             float: The loss value.
         """
         print("computing loss")
-        sig = np.sqrt(var) + 1e-3 # numerical factor for stability
-        loss = - 0.5*np.nansum(( (test_lc - fiducial_lc)**2 
-                            / sig
-                            - np.log(sig)))
+
+        if self.in_K: # fiducial cone is given in Kelvin, not mKelvin
+            sig = np.sqrt(var*1e6) ) + 1e-3 # np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
+            loss = - 0.5*np.sum(( (test_lc - fiducial_lc*1e6)**2 
+                                / sig
+                                - np.log(sig)))
+        else:
+            sig = np.sqrt(var) + 1e-3 # numerical factor for stability
+            loss = - 0.5*np.sum(( (test_lc - fiducial_lc)**2 
+                        / sig
+                        - np.log(sig)))
+
         logging.info(f"loss = {info}")
         return loss
 
@@ -683,6 +694,7 @@ class Flower(Simulation):
         nsteps: int = 1000,
         continue_run: bool = False,
         nun_num: int = 0,
+        mpi = False,
     ) -> None:
         """
         Run the emcee sampling.
@@ -699,9 +711,15 @@ class Flower(Simulation):
         backend = emcee.backends.HDFBackend(filename=self.data_path + filename + str(nun_num))
         initial = self.initialize_parameter((walkers, ndim))
         self.debug("Initial parameters: " + str(initial))
-        schwimmhalle = Pool(
-            max_workers=threads, max_tasks_per_child=1, mp_context=get_context("spawn")
-        )
+        if not mpi:
+            schwimmhalle = Pool(
+                max_workers=threads, max_tasks_per_child=1, mp_context=get_context("spawn")
+            )
+        else: 
+            schwimmhalle = MPIPool()
+            if not schwimmhalle.is_master():
+                    pool.wait()
+                    sys.exit(0)
         with schwimmhalle as p:
             sampler = emcee.EnsembleSampler(
                 nwalkers=walkers,
