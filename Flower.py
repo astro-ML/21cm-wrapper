@@ -173,8 +173,8 @@ class Probability:
             float: The loss value.
         """
         print("computing loss")
-        sig = np.sqrt(var) # np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
-        loss = - 0.5*np.sum(( (test_lc - fiducial_lc)**2 
+        sig = np.sqrt(var) + 1e-3 # numerical factor for stability
+        loss = - 0.5*np.nansum(( (test_lc - fiducial_lc)**2 
                             / sig
                             - np.log(sig)))
         logging.info(f"loss = {info}")
