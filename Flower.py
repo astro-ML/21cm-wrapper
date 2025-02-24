@@ -178,7 +178,7 @@ class Probability:
         print("computing loss")
 
         if self.in_K: # fiducial cone is given in Kelvin, not mKelvin
-            sig = np.sqrt(var*1e6) ) + 1e-3 # np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
+            sig = np.sqrt(var*1e6) + 1e-3 # np.sqrt(fiducial_lc) + np.sqrt(test_lc) + 1e-5
             loss = - 0.5*np.sum(( (test_lc - fiducial_lc*1e6)**2 
                                 / sig
                                 - np.log(sig)))
@@ -392,7 +392,7 @@ class Simulation(Leaf):
             
             temp_threads = self.userparams.N_THREADS
             self.userparams.update(
-            N_THREADS=os.cpu_count() if os.cpu_count() < 17 else 16
+            N_THREADS=4
             )
             # regnerate lightcone until they fulfill 5 sigma planck constraints
             fiducial_cone = None
