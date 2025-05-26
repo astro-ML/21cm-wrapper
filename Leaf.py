@@ -308,7 +308,7 @@ class Leaf:
             if filter_peculiar:
                 self.debug("Filter according to 5 sigma Planck cosmo...")
                 if not self.lc_filter(
-                    tau=np.array(self.tau), gxH0=np.array(run.global_xH), node_redshift = np.array(run.node_redshifts), run_id=run_id
+                    tau=tau, gxH0=np.array(run.global_xH), node_redshift = np.array(run.node_redshifts), run_id=run_id
                 ):
                     return None
                 self.debug("Filtering passed.")
@@ -509,9 +509,9 @@ class Leaf:
         """Apply tau and global nvalueeutral fraction at z=5 (gxH[0]) filters according to
         https://github.com/astro-ML/3D-21cmPIE-Net/blob/main/simulations/runSimulations.py
         """
-        z_min = find_nearest_index(node_redshift, 5)
-        z_max = find_nearest_index(node_redshift, 9)
-        if (tau[0] > 0.089 or gxH0[z_min] > 0.01) or gxH0[z_max] < 0.1:
+        z_min = find_nearest_index(node_redshift, 6.2)
+        z_max = find_nearest_index(node_redshift, 8.5)
+        if tau>0.089 or gxH0[z_min] > 0.05 or gxH0[z_max] < 0.2 or gxH0[z_max] > 0.6 or gxH0[z_min] == 0:
             self.debug("Lightcone rejected." + f" {tau=} " + f" {gxH0=} ")
             if self.make_statistics:
                 self.filtercounter.append(
