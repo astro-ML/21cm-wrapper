@@ -19,14 +19,15 @@ class Probability:
         fmodel_path: str = "./mcmc_data/fiducial_ps.npy",
         summary_statistics: str = "1dps",
         summary_net = None,
-        z_cut: int = 680,
         in_K = False
     ):
-        """Stores the likelihood, priors and the summary statistics
+        """Stores and computes the likelihood, priors and the summary statistics
 
         Args:
-            prior_ranges (dict): A dictionary containing the prior ranges for the parameters.
-            z_eval (list[float]): A list of redshifts at which the power spectrum will be evaluated.
+            prior_ranges (dict): A dictionary containing the prior ranges for the parameters of the form {parameter: priorfunc}.
+            z_eval (int | list[float]): A list of redshifts at which the power spectrum will be evaluated. If integer, the lightcone will be split in integer number of chunks.
+            chunk_size (int): The size of the chunks to split the lightcone into. Defaults to 140. If chunk_size is given, z_eval will be ignored.
+            chunk_skip (int): The number of chunks to between the power spectrum evaluations. For zero padding chunk_skip should be equal to chunk_size. Defaults to 140.
             bins (int): The number of bins for the power spectrum.
             debug (bool, optional): Whether to enable debug mode. Defaults to True.
             fmodel_path (str, optional): The path to the fiducial model. Defaults to "./mcmc_data/fiducial_cone.npy".
@@ -170,8 +171,8 @@ class Probability:
         print("computing loss")
 
         if self.in_K:
-            # Convert fiducial K → mK and var K² → mK²
-            sig_mK2 = var * 1e6  # Convert variance to mK²
+            # Convert fiducial K -> mK and var K^2 -> mK^2
+            sig_mK2 = var * 1e6 
             diff = test_lc - fiducial_lc * 1e6
         else:
             sig_mK2 = var
@@ -180,7 +181,7 @@ class Probability:
         # Numerical stability: prevent division by zero
         sig_mK2 = np.clip(sig_mK2, 1e-9, None)
         
-        # Proper χ² + log(variance)
+        # Proper xi^2 + log(variance)
         loss = -0.5 * np.nansum((diff ** 2) / sig_mK2 + np.log(sig_mK2))
         
         logging.info(f"Final loss: {loss:.2f}")
@@ -252,57 +253,6 @@ class Probability:
         """
 
         
-        '''        
-
-                lc_zs = np.array(lightcone.lightcone_redshifts)
-        res_2d, res_2derr = np.empty((3,10,10)), np.empty((3,10,10))
-
-        kpar = np.array([
-        0,
-        5.000000e-02,
-        1.000000e-01,
-        1.500000e-01,
-        2.000000e-01,
-        2.500000e-01,
-        3.000000e-01,
-        3.500000e-01,
-        4.000000e-01,
-        4.500000e-01,
-        5.000000e-01,
-        ]) + 2.5e-2
-
-        kperp = np.array([
-        0,
-        5.000000e-02,
-        1.000000e-01,
-        1.500000e-01,
-        2.000000e-01,
-        2.500000e-01,
-        3.000000e-01,
-        3.500000e-01,
-        4.000000e-01,
-        4.500000e-01,
-        5.000000e-01,
-        ]) + 2.5e-2
-
-
-        for k, (high,low) in enumerate([(8.41,7.56), (7.56,6.85), (6.85,6.25)]):
-            idx_low = find_nearest_index(lc_zs,low)
-            idx_high = find_nearest_index(lc_zs,high )
-            chunksize = idx_high-idx_low
-            z_mid = np.mean([lc_zs[idx_low],lc_zs[idx_high]])
-            
-            res = calculate_ps(lc = lightcone.brightness_temp , 
-                        lc_redshifts=lightcone.lightcone_redshifts, 
-                        box_length=lightcone.user_params.BOX_LEN, 
-                        box_side_shape=lightcone.user_params.HII_DIM,
-                        log_bins=False, zs = (z_mid,), 
-                        chunk_size=chunksize,
-                        calc_1d=False, calc_2d=True, get_variance=True,
-                        nbins=kperp, kpar_bins = kpar, bin_ave=True, 
-                        k_weights=ignore_zero_absk,postprocess=True)
-            res_2d[k] = res['final_ps_2D'][0]
-            res_2derr[k] = res['final_var_2D'][0]'''
         res = calculate_ps(lc = lightcone.brightness_temp , 
                         lc_redshifts=lightcone.lightcone_redshifts, 
                         box_length=lightcone.user_params.BOX_LEN, 
