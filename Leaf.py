@@ -28,6 +28,7 @@ import pickle
 import psutil
 import warnings
 
+from astropy.cosmology import FlatLambdaCDM
 
 # circumvent problems caused by some numpy builds messing with ProcessPoolExecuter
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -269,7 +270,7 @@ class Leaf:
         quantities=fields,
         resolution=self.userparams.cell_size,
         # index_offset=0,
-        )
+        cosmo=FlatLambdaCDM(name='Planck18', Om0=0.30964144154550644 if "OMm" in cosmo_params else cosmo_params["OMm"]))
         
         with p21c.global_params.use(**global_params):
             run = p21c.run_lightcone(
